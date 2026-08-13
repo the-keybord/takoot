@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <title>Certiport Database &amp; SQL Server Fundamentals</title>
+  <description>30 practice questions covering Relational DBs, SQL DDL/DML, Constraints, Joins, Indexes &amp; SQL Server Administration for Certiport Certification.</description>
+
+  <!-- 1 -->
+  <question timeLimit="20">
+    <text>What does SQL stand for?</text>
+    <option correct="true">Structured Query Language</option>
+    <option>Standard Question Language</option>
+    <option>Sequential Query Logic</option>
+    <option>System Query Language</option>
+  </question>
+
+  <!-- 2 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: A primary key column in a relational table can contain NULL values.</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 3 -->
+  <question timeLimit="20">
+    <text>Which SQL statement is used to retrieve data from a database table?</text>
+    <option correct="true">SELECT</option>
+    <option>GET</option>
+    <option>FETCH</option>
+    <option>EXTRACT</option>
+  </question>
+
+  <!-- 4 -->
+  <question timeLimit="20">
+    <text>Which constraint uniquely identifies each record in a database table and enforces non-nullability?</text>
+    <option correct="true">PRIMARY KEY</option>
+    <option>FOREIGN KEY</option>
+    <option>UNIQUE</option>
+    <option>CHECK</option>
+  </question>
+
+  <!-- 5 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: The DROP TABLE command deletes a table structure as well as all its data.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 6 -->
+  <question timeLimit="20">
+    <text>Which SQL clause is used to filter records resulting from a GROUP BY query?</text>
+    <option correct="true">HAVING</option>
+    <option>WHERE</option>
+    <option>ORDER BY</option>
+    <option>FILTER BY</option>
+  </question>
+
+  <!-- 7 -->
+  <question timeLimit="20">
+    <text>A column in one table that refers to the PRIMARY KEY of another table is called a:</text>
+    <option correct="true">Foreign Key</option>
+    <option>Candidate Key</option>
+    <option>Composite Key</option>
+    <option>Super Key</option>
+  </question>
+
+  <!-- 8 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: DDL stands for Data Definition Language.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 9 -->
+  <question timeLimit="20">
+    <text>Which of the following commands is a Data Manipulation Language (DML) statement?</text>
+    <option correct="true">INSERT</option>
+    <option>CREATE</option>
+    <option>ALTER</option>
+    <option>DROP</option>
+  </question>
+
+  <!-- 10 -->
+  <question timeLimit="20">
+    <text>Which SQL clause is used to sort the result-set in ascending or descending order?</text>
+    <option correct="true">ORDER BY</option>
+    <option>SORT BY</option>
+    <option>GROUP BY</option>
+    <option>ALIGN BY</option>
+  </question>
+
+  <!-- 11 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: TRUNCATE TABLE is faster than DELETE FROM table without a WHERE clause because it records less log data.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 12 -->
+  <question timeLimit="20">
+    <text>Which JOIN type returns all rows from the left table, and matching rows from the right table?</text>
+    <option correct="true">LEFT JOIN</option>
+    <option>INNER JOIN</option>
+    <option>RIGHT JOIN</option>
+    <option>FULL OUTER JOIN</option>
+  </question>
+
+  <!-- 13 -->
+  <question timeLimit="20">
+    <text>How many clustered indexes can a single SQL Server table have?</text>
+    <option correct="true">Exactly 1</option>
+    <option>Up to 249</option>
+    <option>Unlimited</option>
+    <option>None</option>
+  </question>
+
+  <!-- 14 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: The First Normal Form (1NF) requires that all column values are atomic (indivisible).</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 15 -->
+  <question timeLimit="20">
+    <text>Which keyword is used to remove duplicate rows from a SELECT result set?</text>
+    <option correct="true">DISTINCT</option>
+    <option>UNIQUE</option>
+    <option>DIFFERENT</option>
+    <option>SINGLE</option>
+  </question>
+
+  <!-- 16 -->
+  <question timeLimit="20">
+    <text>Which SQL Server data type is best suited for storing variable-length text up to 8,000 characters?</text>
+    <option correct="true">VARCHAR(8000)</option>
+    <option>CHAR(8000)</option>
+    <option>INT</option>
+    <option>BIT</option>
+  </question>
+
+  <!-- 17 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: Data Control Language (DCL) includes commands such as GRANT and REVOKE.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 18 -->
+  <question timeLimit="20">
+    <text>Which Aggregate function calculates the mathematical average of a set of numeric values?</text>
+    <option correct="true">AVG()</option>
+    <option>SUM()</option>
+    <option>COUNT()</option>
+    <option>MEDIAN()</option>
+  </question>
+
+  <!-- 19 -->
+  <question timeLimit="20">
+    <text>Which command permanently saves changes made during a transaction to the database?</text>
+    <option correct="true">COMMIT</option>
+    <option>ROLLBACK</option>
+    <option>SAVEPOINT</option>
+    <option>CHECKPOINT</option>
+  </question>
+
+  <!-- 20 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: An INNER JOIN returns rows only when there is a match in both tables.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 21 -->
+  <question timeLimit="20">
+    <text>Which virtual table stored in the database is defined by a SELECT query?</text>
+    <option correct="true">View</option>
+    <option>Stored Procedure</option>
+    <option>Trigger</option>
+    <option>Index</option>
+  </question>
+
+  <!-- 22 -->
+  <question timeLimit="20">
+    <text>What is the main purpose of creating a Database Index in SQL Server?</text>
+    <option correct="true">To speed up data retrieval queries</option>
+    <option>To automatically encrypt user passwords</option>
+    <option>To create database backup copies</option>
+    <option>To enforce foreign key relationships</option>
+  </question>
+
+  <!-- 23 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: In SQL, wildcard '%' matches any sequence of zero or more characters in a LIKE pattern.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 24 -->
+  <question timeLimit="20">
+    <text>Which SQL statement is used to modify existing records in a database table?</text>
+    <option correct="true">UPDATE</option>
+    <option>MODIFY</option>
+    <option>ALTER</option>
+    <option>CHANGE</option>
+  </question>
+
+  <!-- 25 -->
+  <question timeLimit="20">
+    <text>Which integrity rule ensures that a Foreign Key value must match an existing Primary Key value?</text>
+    <option correct="true">Referential Integrity</option>
+    <option>Domain Integrity</option>
+    <option>Entity Integrity</option>
+    <option>User-Defined Integrity</option>
+  </question>
+
+  <!-- 26 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: The SQL Server data type BIT stores only 0, 1, or NULL (boolean flag).</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 27 -->
+  <question timeLimit="20">
+    <text>Which SQL command is used to add a new column to an existing table?</text>
+    <option correct="true">ALTER TABLE ... ADD</option>
+    <option>UPDATE TABLE ... ADD</option>
+    <option>MODIFY TABLE ... INSERT</option>
+    <option>CHANGE TABLE ... ADD</option>
+  </question>
+
+  <!-- 28 -->
+  <question timeLimit="20">
+    <text>What type of SQL Server object contains precompiled T-SQL statements that accept input parameters?</text>
+    <option correct="true">Stored Procedure</option>
+    <option>Table View</option>
+    <option>Clustered Index</option>
+    <option>Database Schema</option>
+  </question>
+
+  <!-- 29 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: ROLLBACK undoes transaction operations that have not yet been committed.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 30 -->
+  <question timeLimit="20">
+    <text>Which ACID property ensures that all statements in a transaction complete successfully, or none do?</text>
+    <option correct="true">Atomicity</option>
+    <option>Consistency</option>
+    <option>Isolation</option>
+    <option>Durability</option>
+  </question>
+
+</quiz>

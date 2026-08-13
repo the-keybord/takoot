@@ -175,13 +175,36 @@ function initDatabase() {
   });
 }
 
-// Seed default admin account if no users exist
+// Seed default admin account & default quiz library if empty
 async function seedDefaultAdmin() {
   const existingAdmin = await getUserByUsername('admin');
   if (!existingAdmin) {
     const { salt, hash } = hashPassword('admin123');
     await createUser('admin', hash, salt, 'admin');
     console.log('[DB] Default admin account seeded: Username="admin", Password="admin123"');
+  }
+  await seedDefaultQuizzes();
+}
+
+async function seedDefaultQuizzes() {
+  try {
+    const quizzes = await getAllQuizzes();
+    if (!quizzes || quizzes.length === 0) {
+      const certiportPath = path.join(__dirname, 'public', 'certiport_db_quiz.xml');
+      if (fs.existsSync(certiportPath)) {
+        const xml = fs.readFileSync(certiportPath, 'utf8');
+        await saveQuiz({
+          title: 'Certiport Database & SQL Server Fundamentals',
+          description: '30 practice questions covering Relational DBs, SQL DDL/DML, Constraints & Joins',
+          xmlContent: xml,
+          questionCount: 30,
+          createdBy: 1
+        });
+        console.log('[DB] Seeded Certiport Database & SQL Server quiz (30 questions)');
+      }
+    }
+  } catch (e) {
+    console.warn('[DB] Could not seed default quiz:', e.message);
   }
 }
 

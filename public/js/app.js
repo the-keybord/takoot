@@ -758,6 +758,7 @@
     document.getElementById('hostResultsQText').textContent = `Question ${payload.questionIndex + 1} - Results`;
     const chartGrid = document.getElementById('chartBarsGrid');
     chartGrid.innerHTML = '';
+    chartGrid.style.gridTemplateColumns = `repeat(${payload.optionCounts.length}, 1fr)`;
 
     const maxVotes = Math.max(1, ...payload.optionCounts);
     const shapeIcons = ['▲', '◆', '●', '■'];
@@ -939,7 +940,13 @@
       const btn = document.createElement('button');
       btn.className = `player-btn opt-${idx}`;
       btn.setAttribute('data-index', idx);
-      btn.textContent = shapeIcons[idx] || '•';
+      
+      // If 2 options (True/False), show text label alongside shape icon
+      if (opt.text && (opt.text.toLowerCase() === 'true' || opt.text.toLowerCase() === 'false' || payload.options.length <= 2)) {
+        btn.innerHTML = `<span style="font-size: 2.2rem;">${shapeIcons[idx] || '•'}</span><span style="font-size: 1.4rem; font-weight: 800; margin-left: 0.6rem;">${escapeHtml(opt.text)}</span>`;
+      } else {
+        btn.textContent = shapeIcons[idx] || '•';
+      }
 
       btn.addEventListener('click', () => {
         sendWS('SUBMIT_ANSWER', { choiceIndex: idx });
