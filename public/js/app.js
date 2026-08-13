@@ -49,6 +49,22 @@
     setupHostGameEvents();
     connectWebSocket();
     checkAuthStatus();
+
+    // Check for QR code direct join parameter (?pin=XXXXXX)
+    const urlParams = new URLSearchParams(window.location.search);
+    const pinParam = urlParams.get('pin');
+    if (pinParam) {
+      const inputPin = document.getElementById('inputPin');
+      if (inputPin) inputPin.value = pinParam;
+      document.getElementById('joinStepPin').style.display = 'none';
+      document.getElementById('joinStepNick').style.display = 'block';
+      hideError('joinErrorMsg');
+      showView(views.playerJoin);
+      setTimeout(() => {
+        const inputNick = document.getElementById('inputNickname');
+        if (inputNick) inputNick.focus();
+      }, 150);
+    }
   }
 
   // View Switching Helper
@@ -194,7 +210,8 @@
 
       case 'PLAYER_JOINED':
       case 'PLAYER_LIST_UPDATE':
-        updateHostPlayerGrid(payload.players || payload.players);
+        const playersList = (payload && payload.players) ? payload.players : (data.players ? data.players : []);
+        updateHostPlayerGrid(playersList);
         break;
 
       case 'QUESTION_START_HOST':
@@ -514,7 +531,7 @@
         card.className = 'saved-quiz-card';
         card.innerHTML = `
           <div>
-            <div style="font-weight: 800; font-size: 1rem; color: #ffffff;">${escapeHtml(q.title)}</div>
+            <div style="font-weight: 800; font-size: 1rem; color: #0f172a;">${escapeHtml(q.title)}</div>
             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">
               ❓ ${q.question_count} Questions ${q.author ? `• By ${escapeHtml(q.author)}` : ''}
             </div>

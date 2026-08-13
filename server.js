@@ -283,11 +283,7 @@ wss.on('connection', (ws) => {
       } else if (ws.role === 'PLAYER') {
         room.players.delete(ws.id);
         // Send updated player list to Host
-        sendToHost(room, {
-          type: 'PLAYER_LIST_UPDATE',
-          playerCount: room.players.size,
-          players: Array.from(room.players.values()).map(p => ({ id: p.id, nickname: p.nickname, avatar: p.avatar, score: p.score }))
-        });
+        sendPlayerListUpdate(room);
       }
     }
   });
@@ -310,6 +306,22 @@ function sendToHost(room, data) {
   if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
     room.hostWs.send(JSON.stringify(data));
   }
+}
+
+function sendPlayerListUpdate(room) {
+  const playerList = Array.from(room.players.values()).map(p => ({
+    id: p.id,
+    nickname: p.nickname,
+    avatar: p.avatar,
+    score: p.score
+  }));
+  sendToHost(room, {
+    type: 'PLAYER_LIST_UPDATE',
+    payload: {
+      playerCount: playerList.length,
+      players: playerList
+    }
+  });
 }
 
 function sendToPlayer(player, data) {
@@ -405,15 +417,8 @@ function handleClientMessage(ws, data) {
         }
       }));
 
-      // Notify host of new player
-      sendToHost(room, {
-        type: 'PLAYER_JOINED',
-        payload: {
-          id: playerObj.id,
-          nickname: playerObj.nickname,
-          avatar: playerObj.avatar
-        }
-      });
+      // Send updated player list to host
+      sendPlayerListUpdate(room);
       break;
     }
 
@@ -447,6 +452,8 @@ function handleClientMessage(ws, data) {
           quizTitle: room.quiz.title
         }
       }));
+
+      sendPlayerListUpdate(room);
 
       // Sync active state to reconnected player
       if (room.state === 'QUESTION') {

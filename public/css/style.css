@@ -346,12 +346,13 @@ body::before {
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
-  background: var(--surface-card);
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  color: #ffffff;
   padding: 1.5rem 2rem;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--surface-glass-border);
+  border: 1px solid rgba(139, 92, 246, 0.3);
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 30px rgba(30, 27, 75, 0.3);
 }
 
 .pin-display {
@@ -360,19 +361,23 @@ body::before {
 }
 
 .pin-label {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   font-weight: 700;
 }
 
+.pin-label span {
+  color: #38bdf8;
+}
+
 .pin-code {
-  font-size: 3.5rem;
+  font-size: 3.8rem;
   font-weight: 900;
   letter-spacing: 4px;
-  color: #fff;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  color: #fde047;
+  text-shadow: 0 0 25px rgba(253, 224, 71, 0.4);
 }
 
 .qr-box {
@@ -382,6 +387,7 @@ body::before {
   background: #ffffff;
   padding: 0.75rem;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .qr-box img, .qr-box canvas {
@@ -407,10 +413,12 @@ body::before {
 
 .player-count-badge {
   background: var(--color-accent-grad);
+  color: #ffffff;
   padding: 0.4rem 1.2rem;
   border-radius: var(--radius-full);
   font-weight: 800;
   font-size: 1.1rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .player-grid {
@@ -424,16 +432,17 @@ body::before {
 }
 
 .player-chip {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--surface-glass-border);
+  background: #ffffff;
+  color: #0f172a;
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
   padding: 0.8rem 1rem;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.05rem;
   animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   word-break: break-word;
 }
