@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment & Logs
+*.log
+.DS_Store
+
+# SQLite Database Storage
+# (Note: Leave data/ committed if you want your local sample database pushed to GitHub for initial Coolify deploy)
+# data/*.db

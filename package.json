@@ -1,0 +1,26 @@
+{
+  "name": "takoot",
+  "version": "1.0.0",
+  "description": "Lightweight, real-time Kahoot-like interactive quiz application",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "quiz",
+    "kahoot",
+    "realtime",
+    "websocket",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "fast-xml-parser": "^4.5.1",
+    "sqlite3": "^6.0.1",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <title>Takoot General Knowledge & Science Quiz</title>
+  <description>Sample quiz showcasing Takoot real-time features with image support</description>
+
+  <question timeLimit="20">
+    <text>What is the chemical symbol for Gold?</text>
+    <option correct="true">Au</option>
+    <option>Ag</option>
+    <option>Fe</option>
+    <option>Cu</option>
+  </question>
+
+  <question timeLimit="20">
+    <text>Which famous landmark is pictured below?</text>
+    <image>https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&amp;fit=crop&amp;w=600&amp;q=80</image>
+    <option>Colosseum</option>
+    <option correct="true">Eiffel Tower</option>
+    <option>Big Ben</option>
+    <option>Leaning Tower of Pisa</option>
+  </question>
+
+  <question timeLimit="20">
+    <text>Which planet in our solar system is known as the Red Planet?</text>
+    <option>Venus</option>
+    <option correct="true">Mars</option>
+    <option>Jupiter</option>
+    <option>Saturn</option>
+  </question>
+
+  <question timeLimit="15">
+    <text>What is the fastest land animal in the world?</text>
+    <option>Lion</option>
+    <option>Pronghorn</option>
+    <option correct="true">Cheetah</option>
+    <option>Falcon</option>
+  </question>
+
+  <question timeLimit="20">
+    <text>How many bones are there in the adult human body?</text>
+    <option>186</option>
+    <option correct="true">206</option>
+    <option>216</option>
+    <option>300</option>
+  </question>
+
+  <question timeLimit="25">
+    <text>Which programming language powers WebSockets natively in browsers?</text>
+    <option>Python</option>
+    <option>C++</option>
+    <option>Java</option>
+    <option correct="true">JavaScript</option>
+  </question>
+</quiz>
