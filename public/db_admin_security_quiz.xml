@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <title>Database Security, Access Control &amp; Backup Fundamentals</title>
+  <description>30 questions strictly based on Data Protection, Backup Strategies (Full, Differential, Log), SQL Server Logins/Users/Roles, GRANT/REVOKE/DENY, Masking, Encryption, and Hashing.</description>
+
+  <!-- 1 -->
+  <question timeLimit="20">
+    <text>What is copied during a FULL BACKUP?</text>
+    <option correct="true">The entire database</option>
+    <option>Only data changed after the last backup</option>
+    <option>Only the transaction log modifications</option>
+    <option>Only table structures without data</option>
+  </question>
+
+  <!-- 2 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: A Full Backup is very simple to restore, but is expensive in terms of storage space and time.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 3 -->
+  <question timeLimit="20">
+    <text>Which T-SQL command creates a Full Backup of a database?</text>
+    <option correct="true">BACKUP DATABASE [nume] TO DISK [cale]</option>
+    <option>BACKUP LOG [nume] TO DISK [cale]</option>
+    <option>CREATE BACKUP [nume] ON DISK [cale]</option>
+    <option>EXPORT DATABASE [nume] TO DISK [cale]</option>
+  </question>
+
+  <!-- 4 -->
+  <question timeLimit="20">
+    <text>What does a DIFFERENTIAL BACKUP copy?</text>
+    <option correct="true">Only data changed after the last FULL BACKUP</option>
+    <option>The entire database from scratch</option>
+    <option>Only changes after the last incremental backup</option>
+    <option>User login passwords only</option>
+  </question>
+
+  <!-- 5 -->
+  <question timeLimit="20">
+    <text>Which option must be added to the BACKUP DATABASE command to create a Differential Backup?</text>
+    <option correct="true">WITH DIFFERENTIAL</option>
+    <option>WITH INCREMENTAL</option>
+    <option>TYPE = DIFFERENTIAL</option>
+    <option>MODE = DIFF</option>
+  </question>
+
+  <!-- 6 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: An Incremental / Transaction Log backup saves only modifications that occurred after the last backup, regardless of backup type.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 7 -->
+  <question timeLimit="20">
+    <text>What are the main advantages of an Incremental / Transaction Log Backup?</text>
+    <option correct="true">It executes faster and occupies less storage space</option>
+    <option>It offers the fastest restore process</option>
+    <option>It creates a complete copy of the whole database</option>
+    <option>It requires no disk space</option>
+  </question>
+
+  <!-- 8 -->
+  <question timeLimit="20">
+    <text>What is a major disadvantage of Incremental / Transaction Log Backups?</text>
+    <option correct="true">Slow restore process (Restaurarea lentă)</option>
+    <option>It uses too much disk space</option>
+    <option>It takes too long to execute</option>
+    <option>It deletes the original database</option>
+  </question>
+
+  <!-- 9 -->
+  <question timeLimit="20">
+    <text>Which T-SQL command creates a Transaction Log / Incremental Backup?</text>
+    <option correct="true">BACKUP LOG [nume database] TO DISK [calea]</option>
+    <option>BACKUP DATABASE [nume database] TO DISK [calea]</option>
+    <option>CREATE LOG BACKUP [nume database] TO DISK [calea]</option>
+    <option>BACKUP TRANSACTION [nume database] TO DISK [calea]</option>
+  </question>
+
+  <!-- 10 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: To gain access to a database, a user must first have an account on the database server called a LOGIN.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 11 -->
+  <question timeLimit="20">
+    <text>What is an account created on the database SERVER level called?</text>
+    <option correct="true">LOGIN</option>
+    <option>USER</option>
+    <option>ROLE</option>
+    <option>MEMBER</option>
+  </question>
+
+  <!-- 12 -->
+  <question timeLimit="20">
+    <text>What is an account created INSIDE a specific database called?</text>
+    <option correct="true">USER</option>
+    <option>LOGIN</option>
+    <option>ROLE</option>
+    <option>SCHEMA</option>
+  </question>
+
+  <!-- 13 -->
+  <question timeLimit="20">
+    <text>Which statement correctly creates a server LOGIN named alice_login with a password?</text>
+    <option correct="true">CREATE LOGIN alice_login WITH PASSWORD = 'Password123!'</option>
+    <option>CREATE USER alice_login WITH PASSWORD = 'Password123!'</option>
+    <option>ADD LOGIN alice_login PASSWORD = 'Password123!'</option>
+    <option>NEW LOGIN alice_login IDENTIFIED BY 'Password123!'</option>
+  </question>
+
+  <!-- 14 -->
+  <question timeLimit="20">
+    <text>Which T-SQL statement creates a database USER mapped to a server LOGIN?</text>
+    <option correct="true">CREATE USER alice_user FOR LOGIN alice_login</option>
+    <option>CREATE LOGIN alice_user FOR USER alice_login</option>
+    <option>ADD USER alice_user TO LOGIN alice_login</option>
+    <option>LINK USER alice_user WITH LOGIN alice_login</option>
+  </question>
+
+  <!-- 15 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: A ROLE in a database is a group of users with specific established rights/permissions.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 16 -->
+  <question timeLimit="20">
+    <text>Which T-SQL command adds a database user (alice_user) as a member to a role (db_datareader)?</text>
+    <option correct="true">ALTER ROLE db_datareader ADD MEMBER alice_user</option>
+    <option>GRANT ROLE db_datareader TO alice_user</option>
+    <option>ADD USER alice_user TO ROLE db_datareader</option>
+    <option>UPDATE ROLE db_datareader SET MEMBER = alice_user</option>
+  </question>
+
+  <!-- 17 -->
+  <question timeLimit="20">
+    <text>Which SQL statement is used to grant a right/permission on an object to a user?</text>
+    <option correct="true">GRANT</option>
+    <option>REVOKE</option>
+    <option>DENY</option>
+    <option>ALLOW</option>
+  </question>
+
+  <!-- 18 -->
+  <question timeLimit="20">
+    <text>What is the correct general syntax for a GRANT statement?</text>
+    <option correct="true">GRANT [functia] ON [obiectul] TO [utilizatorul]</option>
+    <option>GRANT [utilizatorul] ON [obiectul] TO [functia]</option>
+    <option>GRANT [obiectul] FOR [functia] TO [utilizatorul]</option>
+    <option>GRANT TO [utilizatorul] ON [functia] FOR [obiectul]</option>
+  </question>
+
+  <!-- 19 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: GRANT INSERT ON Student_Table TO user_vasea gives user_vasea the right to insert data into Student_Table.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 20 -->
+  <question timeLimit="20">
+    <text>What does adding WITH GRANT OPTION to a GRANT statement allow the user to do?</text>
+    <option correct="true">Allows the user to perform the action AND grant that right to other users</option>
+    <option>Automatically revokes the permission after 24 hours</option>
+    <option>Prevents the admin from revoking the permission</option>
+    <option>Grants access to all databases on the server</option>
+  </question>
+
+  <!-- 21 -->
+  <question timeLimit="20">
+    <text>Which SQL command is used to WITHDRAW (retrace) a previously granted right?</text>
+    <option correct="true">REVOKE</option>
+    <option>DENY</option>
+    <option>REMOVE</option>
+    <option>CANCEL</option>
+  </question>
+
+  <!-- 22 -->
+  <question timeLimit="20">
+    <text>What is the correct syntax to REVOKE INSERT on Student_Table from user_vasea?</text>
+    <option correct="true">REVOKE INSERT ON Student_Table FROM user_vasea</option>
+    <option>REVOKE INSERT ON Student_Table TO user_vasea</option>
+    <option>DENY INSERT ON Student_Table FROM user_vasea</option>
+    <option>DELETE INSERT ON Student_Table FOR user_vasea</option>
+  </question>
+
+  <!-- 23 -->
+  <question timeLimit="20">
+    <text>Which SQL command explicitly FORBIDS / PROHIBITS an action for a user?</text>
+    <option correct="true">DENY</option>
+    <option>REVOKE</option>
+    <option>BLOCK</option>
+    <option>BAN</option>
+  </question>
+
+  <!-- 24 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: DENY INSERT ON Student_Table TO user_vasea explicitly forbids user_vasea from inserting data into Student_Table.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 25 -->
+  <question timeLimit="20">
+    <text>What is Data MASKING?</text>
+    <option correct="true">The process of hiding specific parts of data to protect sensitive info (irreversible)</option>
+    <option>Transforming text into ciphertext using a key</option>
+    <option>Generating a hash string from a password</option>
+    <option>Creating a full backup of the database</option>
+  </question>
+
+  <!-- 26 -->
+  <question timeLimit="20">
+    <text>Replacing a phone number with '06******90' or 'And*****001' is an example of which technique?</text>
+    <option correct="true">Masking</option>
+    <option>Encryption</option>
+    <option>Hashing</option>
+    <option>Authentication</option>
+  </question>
+
+  <!-- 27 -->
+  <question timeLimit="20">
+    <text>What is Data ENCRYPTION?</text>
+    <option correct="true">Transforming readable data into ciphertext using an algorithm and a cryptographic key</option>
+    <option>Hiding partial digits of a card number</option>
+    <option>Creating server logins</option>
+    <option>Deleting data permanently</option>
+  </question>
+
+  <!-- 28 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: Data Encryption is reversible by applying the cryptographic key to the encrypted ciphertext (mesaj + cheie = ciphertext; ciphertext + cheie = mesaj).</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 29 -->
+  <question timeLimit="20">
+    <text>What is HASHING?</text>
+    <option correct="true">Passing data through an algorithm to generate an irreversible string of characters (hash)</option>
+    <option>Encrypting data with a symmetric key that can be decrypted</option>
+    <option>Masking middle characters of a string with asterisks</option>
+    <option>Restoring a transaction log backup</option>
+  </question>
+
+  <!-- 30 (True/False) -->
+  <question timeLimit="15">
+    <text>True or False: Hashing is an IRREVERSIBLE process, where passing the exact same text and algorithm will always produce the exact same hash output.</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+</quiz>

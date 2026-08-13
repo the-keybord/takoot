@@ -189,19 +189,32 @@ async function seedDefaultAdmin() {
 async function seedDefaultQuizzes() {
   try {
     const quizzes = await getAllQuizzes();
-    if (!quizzes || quizzes.length === 0) {
-      const certiportPath = path.join(__dirname, 'public', 'certiport_db_quiz.xml');
-      if (fs.existsSync(certiportPath)) {
-        const xml = fs.readFileSync(certiportPath, 'utf8');
-        await saveQuiz({
-          title: 'Certiport Database & SQL Server Fundamentals',
-          description: '30 practice questions covering Relational DBs, SQL DDL/DML, Constraints & Joins',
-          xmlContent: xml,
-          questionCount: 30,
-          createdBy: 1
-        });
-        console.log('[DB] Seeded Certiport Database & SQL Server quiz (30 questions)');
-      }
+    const existingTitles = quizzes ? quizzes.map(q => q.title) : [];
+
+    const secPath = path.join(__dirname, 'public', 'db_admin_security_quiz.xml');
+    if (fs.existsSync(secPath) && !existingTitles.includes('Database Security, Access Control & Backup Fundamentals')) {
+      const xml = fs.readFileSync(secPath, 'utf8');
+      await saveQuiz({
+        title: 'Database Security, Access Control & Backup Fundamentals',
+        description: '30 questions based on Data Protection, Backups, Logins/Users/Roles, GRANT/REVOKE/DENY, Masking, Encryption, Hashing',
+        xmlContent: xml,
+        questionCount: 30,
+        createdBy: 1
+      });
+      console.log('[DB] Seeded Database Security & Backup Fundamentals quiz (30 questions)');
+    }
+
+    const certiportPath = path.join(__dirname, 'public', 'certiport_db_quiz.xml');
+    if (fs.existsSync(certiportPath) && !existingTitles.includes('Certiport Database & SQL Server Fundamentals')) {
+      const xml = fs.readFileSync(certiportPath, 'utf8');
+      await saveQuiz({
+        title: 'Certiport Database & SQL Server Fundamentals',
+        description: '30 practice questions covering Relational DBs, SQL DDL/DML, Constraints & Joins',
+        xmlContent: xml,
+        questionCount: 30,
+        createdBy: 1
+      });
+      console.log('[DB] Seeded Certiport Database & SQL Server quiz (30 questions)');
     }
   } catch (e) {
     console.warn('[DB] Could not seed default quiz:', e.message);
