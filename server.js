@@ -330,13 +330,22 @@ function sendToPlayer(player, data) {
   }
 }
 
+function shuffleArray(array) {
+  if (!Array.isArray(array)) return array;
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 // WebSocket Event Router
 function handleClientMessage(ws, data) {
   const { type, payload } = data;
 
   switch (type) {
     case 'CREATE_ROOM': {
-      const { quiz, token } = payload || {};
+      const { quiz, token, shuffleQuestions = true, shuffleOptions = true } = payload || {};
 
       // Require teacher authentication for room hosting
       if (!token || !sessions.has(token)) {
@@ -350,11 +359,28 @@ function handleClientMessage(ws, data) {
         return ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid quiz data' }));
       }
 
+      // Deep clone quiz to avoid mutating original structure
+      const processedQuiz = JSON.parse(JSON.stringify(quiz));
+
+      // Randomize options order per question
+      if (shuffleOptions) {
+        processedQuiz.questions.forEach(q => {
+          if (q.options && q.options.length > 1) {
+            shuffleArray(q.options);
+          }
+        });
+      }
+
+      // Randomize question order
+      if (shuffleQuestions) {
+        shuffleArray(processedQuiz.questions);
+      }
+
       const pin = generateGamePin();
       const room = {
         pin: pin,
         hostWs: ws,
-        quiz: quiz,
+        quiz: processedQuiz,
         players: new Map(),
         state: 'LOBBY',
         currentQuestionIndex: -1,

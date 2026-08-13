@@ -325,8 +325,18 @@
         document.getElementById('loginModal').style.display = 'flex';
         return;
       }
+      const chkQ = document.getElementById('chkShuffleQuestions');
+      const chkO = document.getElementById('chkShuffleOptions');
+      const shuffleQuestions = chkQ ? chkQ.checked : true;
+      const shuffleOptions = chkO ? chkO.checked : true;
+
       if (parsedQuizData) {
-        sendWS('CREATE_ROOM', { quiz: parsedQuizData, token: authToken });
+        sendWS('CREATE_ROOM', {
+          quiz: parsedQuizData,
+          token: authToken,
+          shuffleQuestions: shuffleQuestions,
+          shuffleOptions: shuffleOptions
+        });
       }
     });
 
@@ -1124,6 +1134,40 @@
       });
     }
   }
+
+  // Global Spacebar Hotkey for Host Main Actions
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.key === ' ') {
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        return;
+      }
+
+      if (currentRole === 'HOST') {
+        if (views.hostLobby && views.hostLobby.classList.contains('active')) {
+          e.preventDefault();
+          const btn = document.getElementById('btnStartGame');
+          if (btn) btn.click();
+        } else if (views.hostQuestion && views.hostQuestion.classList.contains('active')) {
+          e.preventDefault();
+          const btn = document.getElementById('btnEndTimerEarly');
+          if (btn) btn.click();
+        } else if (views.hostResults && views.hostResults.classList.contains('active')) {
+          e.preventDefault();
+          const btn = document.getElementById('btnNextQuestion');
+          if (btn) btn.click();
+        } else if (views.hostLeaderboard && views.hostLeaderboard.classList.contains('active')) {
+          e.preventDefault();
+          const btn = document.getElementById('btnNextQuestion');
+          if (btn) btn.click();
+        } else if (views.hostPodium && views.hostPodium.classList.contains('active')) {
+          e.preventDefault();
+          const btn = document.getElementById('btnPlayAgain');
+          if (btn) btn.click();
+        }
+      }
+    }
+  });
 
   // Run app on DOM loaded
   document.addEventListener('DOMContentLoaded', init);

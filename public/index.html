@@ -192,6 +192,18 @@
             </div>
           </div>
 
+          <!-- Host Game Options: Shuffling Controls -->
+          <div id="hostGameOptions" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.9rem 1.2rem; margin-bottom: 1.2rem; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
+              <input type="checkbox" id="chkShuffleQuestions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
+              🔀 Randomize Questions
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
+              <input type="checkbox" id="chkShuffleOptions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
+              🔀 Randomize Answers
+            </label>
+          </div>
+
           <div style="display: flex; gap: 0.8rem; width: 100%; flex-wrap: wrap;">
             <a href="/db_admin_security_quiz.xml" download="db_admin_security_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 DB Security XML</a>
             <a href="/certiport_db_quiz.xml" download="certiport_db_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 Certiport DB XML</a>
