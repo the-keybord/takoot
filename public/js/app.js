@@ -702,13 +702,19 @@
       sendWS('REVEAL_RESULTS', {});
     });
 
-    document.getElementById('btnShowLeaderboard').addEventListener('click', () => {
-      sendWS('SHOW_LEADERBOARD', {});
-    });
+    const btnShowLd = document.getElementById('btnShowLeaderboard');
+    if (btnShowLd) {
+      btnShowLd.addEventListener('click', () => {
+        sendWS('SHOW_LEADERBOARD', {});
+      });
+    }
 
-    document.getElementById('btnNextQuestion').addEventListener('click', () => {
-      sendWS('NEXT_QUESTION', {});
-    });
+    const btnNext = document.getElementById('btnNextQuestion');
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        sendWS('NEXT_QUESTION', {});
+      });
+    }
 
     document.getElementById('btnPlayAgain').addEventListener('click', () => {
       location.reload();
@@ -770,12 +776,36 @@
       chartGrid.appendChild(wrapper);
     });
 
+    // Render integrated leaderboard rows
+    const list = document.getElementById('resultsLeaderboardRows');
+    if (list && payload.topPlayers) {
+      list.innerHTML = '';
+      payload.topPlayers.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className = 'leaderboard-row';
+        row.innerHTML = `
+          <div class="rank">#${idx + 1}</div>
+          <div class="player-info">
+            <span>${p.avatar}</span>
+            <span>${escapeHtml(p.nickname)}</span>
+            ${p.streak >= 2 ? `<span style="font-size: 0.9rem; color: #fde047;">🔥 ${p.streak}</span>` : ''}
+          </div>
+          <div class="score">${p.score} pts</div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
     // Update next button label if last question
-    const nextBtn = document.getElementById('btnShowLeaderboard');
-    if (payload.isLastQuestion) {
-      nextBtn.textContent = 'View Final Winners 🎉';
-    } else {
-      nextBtn.textContent = 'Show Leaderboard 🏆';
+    const nextBtn = document.getElementById('btnNextQuestion');
+    if (nextBtn) {
+      if (payload.isLastQuestion) {
+        nextBtn.textContent = 'View Final Winners 🎉';
+        nextBtn.className = 'btn btn-primary btn-lg';
+      } else {
+        nextBtn.textContent = 'Next Question ⏩';
+        nextBtn.className = 'btn btn-success btn-lg';
+      }
     }
   }
 

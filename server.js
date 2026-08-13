@@ -688,7 +688,21 @@ function finishQuestion(room) {
     }
   }
 
-  // Send Host results breakdown
+  // Sort players by score descending for top 5 leaderboard
+  const sortedPlayers = Array.from(room.players.values())
+    .sort((a, b) => b.score - a.score)
+    .map((p, rank) => ({
+      rank: rank + 1,
+      id: p.id,
+      nickname: p.nickname,
+      avatar: p.avatar,
+      score: p.score,
+      streak: p.streak
+    }));
+
+  const top5 = sortedPlayers.slice(0, 5);
+
+  // Send Host results breakdown & leaderboard
   sendToHost(room, {
     type: 'QUESTION_RESULTS_HOST',
     payload: {
@@ -697,6 +711,7 @@ function finishQuestion(room) {
       optionCounts: optionCounts,
       answersReceived: room.answersReceived,
       totalPlayers: room.players.size,
+      topPlayers: top5,
       isLastQuestion: room.currentQuestionIndex >= room.quiz.questions.length - 1
     }
   });
