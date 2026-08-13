@@ -100,6 +100,11 @@
     });
 
     document.getElementById('btnGoHost').addEventListener('click', () => {
+      if (!currentUser || !authToken) {
+        hideError('loginErrorMsg');
+        document.getElementById('loginModal').style.display = 'flex';
+        return;
+      }
       showView(views.hostUpload);
       fetchSavedQuizzes();
     });
@@ -315,8 +320,13 @@
     });
 
     btnCreateRoom.addEventListener('click', () => {
+      if (!currentUser || !authToken) {
+        alert('Teacher login required to host a quiz room.');
+        document.getElementById('loginModal').style.display = 'flex';
+        return;
+      }
       if (parsedQuizData) {
-        sendWS('CREATE_ROOM', { quiz: parsedQuizData });
+        sendWS('CREATE_ROOM', { quiz: parsedQuizData, token: authToken });
       }
     });
 
@@ -502,7 +512,7 @@
       if (btnLoginModalOpen) btnLoginModalOpen.style.display = 'inline-flex';
       if (btnLogoutBtn) btnLogoutBtn.style.display = 'none';
       if (teacherAuthBanner) teacherAuthBanner.style.display = 'block';
-      if (teacherHostPanel) teacherHostPanel.style.display = 'block'; // Panel visible so they can browse library or see notice
+      if (teacherHostPanel) teacherHostPanel.style.display = 'none';
     }
   }
 

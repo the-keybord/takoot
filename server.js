@@ -336,7 +336,16 @@ function handleClientMessage(ws, data) {
 
   switch (type) {
     case 'CREATE_ROOM': {
-      const { quiz } = payload;
+      const { quiz, token } = payload || {};
+
+      // Require teacher authentication for room hosting
+      if (!token || !sessions.has(token)) {
+        return ws.send(JSON.stringify({
+          type: 'ERROR',
+          message: 'Teacher login required to host a quiz room.'
+        }));
+      }
+
       if (!quiz || !quiz.questions || quiz.questions.length === 0) {
         return ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid quiz data' }));
       }
