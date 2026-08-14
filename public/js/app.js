@@ -38,6 +38,250 @@
 
   const navResetBtn = document.getElementById('navResetBtn');
   const logoHomeBtn = document.getElementById('logoHomeBtn');
+  const btnToggleSound = document.getElementById('btnToggleSound');
+
+  // ==================== AUDIO ENGINE & SOUND CONTROLLER ====================
+  let audioCtx = null;
+  let isMuted = false;
+  let masterVolume = 0.4;
+  let activeBgmOscillators = [];
+  let bgmInterval = null;
+  let externalAudioElements = {};
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function toggleSoundMute() {
+    isMuted = !isMuted;
+    if (btnToggleSound) {
+      btnToggleSound.textContent = isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
+      btnToggleSound.className = isMuted ? 'btn btn-sm btn-secondary muted' : 'btn btn-sm btn-primary';
+    }
+    if (isMuted) {
+      stopAllMusic();
+    }
+  }
+
+  function stopAllMusic() {
+    if (bgmInterval) {
+      clearInterval(bgmInterval);
+      bgmInterval = null;
+    }
+    activeBgmOscillators.forEach(osc => {
+      try { osc.stop(); osc.disconnect(); } catch (e) {}
+    });
+    activeBgmOscillators = [];
+
+    // Stop external HTML5 audio elements if active
+    Object.values(externalAudioElements).forEach(aud => {
+      if (aud) {
+        aud.pause();
+        aud.currentTime = 0;
+      }
+    });
+  }
+
+  // Play custom file from public/audio/ if present, otherwise fall back to Web Audio synth
+  function playAudioFileOrFallback(filename, fallbackFn) {
+    if (isMuted) return;
+    initAudio();
+
+    const audioPath = `/audio/${filename}`;
+    if (!externalAudioElements[filename]) {
+      const aud = new Audio(audioPath);
+      aud.volume = masterVolume;
+      externalAudioElements[filename] = aud;
+    }
+
+    const aud = externalAudioElements[filename];
+    aud.currentTime = 0;
+    aud.play().then(() => {
+      // Playing custom audio file from public/audio/
+    }).catch(() => {
+      // Audio file not found or blocked, use Web Audio API synth fallback!
+      if (fallbackFn) fallbackFn();
+    });
+  }
+
+  // 1. GONG SOUND (Resonant metallic gong on question start)
+  function playGongSound() {
+    if (isMuted) return;
+    playAudioFileOrFallback('gong.mp3', () => {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      const freqs = [110, 164.81, 220, 329.63, 440, 554.37];
+      const gains = [0.6, 0.4, 0.3, 0.25, 0.15, 0.1];
+
+      freqs.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.type = idx === 0 ? 'sine' : (idx % 2 === 0 ? 'triangle' : 'sawtooth');
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.98, now + 3.5);
+
+        const initialGain = gains[idx] * masterVolume;
+        gainNode.gain.setValueAtTime(0.001, now);
+        gainNode.gain.linearRampToValueAtTime(initialGain, now + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 4.0);
+      });
+    });
+  }
+
+  // 2. LOBBY THINKING MUSIC (Upbeat Kahoot-style Waiting Loop)
+  function startLobbyMusic() {
+    stopAllMusic();
+    if (isMuted) return;
+
+    playAudioFileOrFallback('lobby.mp3', () => {
+      if (!audioCtx) return;
+      let step = 0;
+      const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+
+      bgmInterval = setInterval(() => {
+        if (isMuted || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        const noteFreq = notes[step % notes.length];
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(noteFreq, now);
+
+        gain.gain.setValueAtTime(0.1 * masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.25);
+
+        step++;
+      }, 300);
+    });
+  }
+
+  // 3. QUESTION COUNTDOWN MUSIC (Gong + Tension building synth rhythm)
+  function startQuestionMusic() {
+    stopAllMusic();
+    if (isMuted) return;
+
+    // Trigger Gong Sound on Question Start
+    playGongSound();
+
+    playAudioFileOrFallback('question.mp3', () => {
+      if (!audioCtx) return;
+      let step = 0;
+      const bassSequence = [130.81, 130.81, 164.81, 146.83, 130.81, 174.61, 164.81, 146.83];
+
+      bgmInterval = setInterval(() => {
+        if (isMuted || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        const freq = bassSequence[step % bassSequence.length];
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.07 * masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.2);
+
+        step++;
+      }, 250);
+    });
+  }
+
+  // 4. RESULTS REVEAL FANFARE
+  function playResultsSound() {
+    stopAllMusic();
+    if (isMuted) return;
+
+    playAudioFileOrFallback('results.mp3', () => {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        const startTime = now + (idx * 0.12);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.18 * masterVolume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.6);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.65);
+      });
+    });
+  }
+
+  // 5. PODIUM VICTORY MUSIC
+  function playPodiumMusic() {
+    stopAllMusic();
+    if (isMuted) return;
+
+    playAudioFileOrFallback('podium.mp3', () => {
+      if (!audioCtx) return;
+      let step = 0;
+      const fanfare = [523.25, 523.25, 523.25, 659.25, 783.99, 1046.50];
+
+      bgmInterval = setInterval(() => {
+        if (isMuted || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        const freq = fanfare[step % fanfare.length];
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.22 * masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.4);
+
+        step++;
+        if (step >= fanfare.length * 4) {
+          clearInterval(bgmInterval);
+          bgmInterval = null;
+        }
+      }, 200);
+    });
+  }
 
   // Initialize App
   function init() {
@@ -48,6 +292,12 @@
     setupPlayerJoinEvents();
     setupHostGameEvents();
     connectWebSocket();
+    checkAuthStatus();
+
+    if (btnToggleSound) {
+      btnToggleSound.addEventListener('click', toggleSoundMute);
+    }
+    document.addEventListener('click', initAudio, { once: true });
     checkAuthStatus();
 
     // Check for QR code direct join parameter (?pin=XXXXXX)
@@ -189,8 +439,10 @@
       case 'ROOM_CREATED':
         currentRole = 'HOST';
         roomPin = payload.pin;
+        if (btnToggleSound) btnToggleSound.style.display = 'inline-flex';
         renderHostLobby(payload);
         showView(views.hostLobby);
+        startLobbyMusic();
         break;
 
       case 'JOIN_SUCCESS':
@@ -223,6 +475,7 @@
         currentQIndex = payload.questionIndex;
         renderHostQuestion(payload);
         showView(views.hostQuestion);
+        startQuestionMusic();
         break;
 
       case 'QUESTION_START_PLAYER':
@@ -268,6 +521,7 @@
         isLastQuestion = payload.isLastQuestion;
         renderHostResultsChart(payload);
         showView(views.hostResults);
+        playResultsSound();
         break;
 
       case 'QUESTION_RESULTS_PLAYER':
@@ -288,12 +542,14 @@
         renderPodium(payload);
         if (currentRole === 'HOST') {
           showView(views.hostPodium);
+          playPodiumMusic();
         } else {
           showView(views.hostPodium);
         }
         break;
 
       case 'ROOM_CLOSED':
+        stopAllMusic();
         alert(data.reason || 'Game room closed by host.');
         location.reload();
         break;
