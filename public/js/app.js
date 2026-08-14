@@ -112,35 +112,30 @@
     });
   }
 
-  // 1. GONG SOUND (Resonant metallic gong on question start)
+  // 1. QUESTION START BEEP (Soft, friendly two-tone chime beep)
   function playGongSound() {
     if (isMuted) return;
-    playAudioFileOrFallback('gong.mp3', () => {
+    playAudioFileOrFallback('beep.mp3', () => {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
 
-      const freqs = [110, 164.81, 220, 329.63, 440, 554.37];
-      const gains = [0.6, 0.4, 0.3, 0.25, 0.15, 0.1];
+      // Soft, warm two-tone chime beep (880Hz -> 1046.5Hz)
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
 
-      freqs.forEach((freq, idx) => {
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1046.5, now + 0.07);
 
-        osc.type = idx === 0 ? 'sine' : (idx % 2 === 0 ? 'triangle' : 'sawtooth');
-        osc.frequency.setValueAtTime(freq, now);
-        osc.frequency.exponentialRampToValueAtTime(freq * 0.98, now + 3.5);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.15 * masterVolume, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
 
-        const initialGain = gains[idx] * masterVolume;
-        gainNode.gain.setValueAtTime(0.001, now);
-        gainNode.gain.linearRampToValueAtTime(initialGain, now + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
 
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        osc.start(now);
-        osc.stop(now + 4.0);
-      });
+      osc.start(now);
+      osc.stop(now + 0.38);
     });
   }
 
