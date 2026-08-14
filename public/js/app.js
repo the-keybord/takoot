@@ -767,9 +767,17 @@
     grid.innerHTML = '';
 
     const shapeIcons = ['▲', '◆', '●', '■'];
+    const isTF = payload.options && payload.options.length === 2 &&
+      String(payload.options[0].text).trim().toLowerCase() === 'true';
+
     payload.options.forEach((opt, idx) => {
       const btn = document.createElement('div');
-      btn.className = `option-btn opt-${idx}`;
+      let colorClass = `opt-${idx}`;
+      if (isTF) {
+        // True (idx 0) is Blue (opt-1), False (idx 1) is Red (opt-0)
+        colorClass = idx === 0 ? 'opt-1' : 'opt-0';
+      }
+      btn.className = `option-btn ${colorClass}`;
       btn.innerHTML = `
         <div class="option-shape">${shapeIcons[idx] || '•'}</div>
         <div class="option-text">${escapeHtml(opt.text)}</div>
@@ -779,24 +787,53 @@
   }
 
   function renderHostResultsChart(payload) {
-    document.getElementById('hostResultsQText').textContent = `Question ${payload.questionIndex + 1} - Results`;
+    // Populate Question Details Header
+    const fullQText = document.getElementById('hostResultsFullQText');
+    const qCounter = document.getElementById('hostResultsQCounter');
+    const imgBox = document.getElementById('hostResultsQImgBox');
+    const qImg = document.getElementById('hostResultsQImage');
+
+    if (fullQText) fullQText.textContent = payload.text || 'Question Results';
+    if (qCounter) qCounter.textContent = `Question ${(payload.questionIndex || 0) + 1} / ${payload.totalQuestions || 1}`;
+
+    if (payload.image && imgBox && qImg) {
+      qImg.src = payload.image;
+      imgBox.style.display = 'flex';
+    } else if (imgBox) {
+      imgBox.style.display = 'none';
+      if (qImg) qImg.src = '';
+    }
+
+    document.getElementById('hostResultsQText').textContent = `Answer Distribution`;
     const chartGrid = document.getElementById('chartBarsGrid');
     chartGrid.innerHTML = '';
     chartGrid.style.gridTemplateColumns = `repeat(${payload.optionCounts.length}, 1fr)`;
 
     const maxVotes = Math.max(1, ...payload.optionCounts);
     const shapeIcons = ['▲', '◆', '●', '■'];
+    const isTF = payload.options && payload.options.length === 2 &&
+      String(payload.options[0].text).trim().toLowerCase() === 'true';
 
     payload.optionCounts.forEach((count, idx) => {
       const isCorrect = idx === payload.correctOptionIndex;
       const heightPercent = Math.max(10, Math.round((count / maxVotes) * 100));
+      const currentOpt = payload.options ? payload.options[idx] : null;
+      const optText = currentOpt ? currentOpt.text : '';
+
+      let colorClass = `opt-${idx}`;
+      if (isTF) {
+        colorClass = idx === 0 ? 'opt-1' : 'opt-0';
+      }
 
       const wrapper = document.createElement('div');
-      wrapper.className = `bar-wrapper opt-${idx} ${isCorrect ? 'correct' : ''}`;
+      wrapper.className = `bar-wrapper ${colorClass} ${isCorrect ? 'correct' : ''}`;
       wrapper.innerHTML = `
         <div class="bar-count">${count}</div>
         <div class="bar-column" style="height: ${heightPercent}%;"></div>
-        <div style="font-weight: 800; font-size: 1.2rem; margin-top: 0.5rem;">${shapeIcons[idx]}</div>
+        <div style="font-weight: 800; font-size: 1.1rem; margin-top: 0.5rem;">${shapeIcons[idx]}</div>
+        <div style="font-size: 0.9rem; font-weight: 800; color: ${isCorrect ? '#16a34a' : 'var(--text-secondary)'}; max-width: 140px; text-align: center; word-break: break-word; margin-top: 0.2rem;">
+          ${escapeHtml(optText)} ${isCorrect ? '✓' : ''}
+        </div>
       `;
       chartGrid.appendChild(wrapper);
     });
@@ -862,7 +899,7 @@
   }
 
   function renderPodium(payload) {
-    const { first, second, third } = payload;
+    const { first, second, third, allPlayers, totalQuestions } = payload;
 
     const setPodiumSlot = (elementId, data) => {
       const el = document.getElementById(elementId);
@@ -879,6 +916,37 @@
     setPodiumSlot('podium1st', first);
     setPodiumSlot('podium2nd', second);
     setPodiumSlot('podium3rd', third);
+
+    // Render Full Players Standings List
+    const standingsList = document.getElementById('fullPodiumStandingsList');
+    if (standingsList && Array.isArray(allPlayers)) {
+      standingsList.innerHTML = '';
+      allPlayers.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'leaderboard-row';
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.justifyContent = 'space-between';
+
+        const correctCount = p.correctAnswersCount !== undefined ? p.correctAnswersCount : 0;
+        const totalQ = totalQuestions || p.totalQuestions || '?';
+
+        row.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <div class="rank" style="min-width: 32px;">#${p.rank}</div>
+            <div style="font-size: 1.4rem;">${p.avatar}</div>
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a;">${escapeHtml(p.nickname)}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <div style="font-weight: 800; font-size: 0.95rem; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.35rem 0.8rem; border-radius: var(--radius-full);">
+              🎯 ${correctCount}/${totalQ} Correct
+            </div>
+            <div class="score" style="font-weight: 900; font-size: 1.2rem; color: #0284c7; min-width: 80px; text-align: right;">${p.score} pts</div>
+          </div>
+        `;
+        standingsList.appendChild(row);
+      });
+    }
   }
 
   // ==================== PLAYER LOGIC ====================
@@ -962,9 +1030,18 @@
     const shapeIcons = ['▲', '◆', '●', '■'];
     currentQuestionOptionsCount = payload.options.length;
 
+    const isTF = payload.options && payload.options.length === 2 &&
+      (String(payload.options[0].text).trim().toLowerCase() === 'true' ||
+       String(payload.options[0].text).trim().toLowerCase() === 'false');
+
     payload.options.forEach((opt, idx) => {
       const btn = document.createElement('button');
-      btn.className = `player-btn opt-${idx}`;
+      let colorClass = `opt-${idx}`;
+      if (isTF) {
+        // True (idx 0) is Blue (opt-1), False (idx 1) is Red (opt-0)
+        colorClass = idx === 0 ? 'opt-1' : 'opt-0';
+      }
+      btn.className = `player-btn ${colorClass}`;
       btn.setAttribute('data-index', idx);
       
       const optText = (opt && opt.text != null) ? String(opt.text).trim() : '';
@@ -1008,6 +1085,21 @@
       title.textContent = payload.answered ? 'Incorrect' : 'Time Up!';
       points.textContent = `Total: ${payload.totalScore} pts`;
       streak.style.display = 'none';
+    }
+
+    // Render Question & Correct Answer Breakdown for Player
+    const qBox = document.getElementById('playerResultQuestionBox');
+    const qNum = document.getElementById('playerResultQNumber');
+    const qText = document.getElementById('playerResultQText');
+    const correctText = document.getElementById('playerResultCorrectText');
+
+    if (qBox && payload.questionText) {
+      if (qNum) qNum.textContent = `Question ${(payload.questionIndex || 0) + 1} / ${payload.totalQuestions || 1}`;
+      if (qText) qText.textContent = payload.questionText;
+      if (correctText) correctText.textContent = payload.correctOptionText || '---';
+      qBox.style.display = 'block';
+    } else if (qBox) {
+      qBox.style.display = 'none';
     }
   }
 

@@ -339,6 +339,23 @@ function shuffleArray(array) {
   return array;
 }
 
+function isTrueFalseQuestion(options) {
+  if (!Array.isArray(options) || options.length !== 2) return false;
+  const t0 = String(options[0].text || '').trim().toLowerCase();
+  const t1 = String(options[1].text || '').trim().toLowerCase();
+  return (t0 === 'true' && t1 === 'false') || (t0 === 'false' && t1 === 'true');
+}
+
+function normalizeTrueFalseOptions(options) {
+  if (!isTrueFalseQuestion(options)) return options;
+  const t0 = String(options[0].text || '').trim().toLowerCase();
+  if (t0 === 'true') {
+    return options;
+  } else {
+    return [options[1], options[0]];
+  }
+}
+
 // WebSocket Event Router
 function handleClientMessage(ws, data) {
   const { type, payload } = data;
@@ -362,14 +379,16 @@ function handleClientMessage(ws, data) {
       // Deep clone quiz to avoid mutating original structure
       const processedQuiz = JSON.parse(JSON.stringify(quiz));
 
-      // Randomize options order per question
-      if (shuffleOptions) {
-        processedQuiz.questions.forEach(q => {
-          if (q.options && q.options.length > 1) {
+      // Normalize True/False options and randomize other options per question
+      processedQuiz.questions.forEach(q => {
+        if (q.options && q.options.length > 1) {
+          if (isTrueFalseQuestion(q.options)) {
+            q.options = normalizeTrueFalseOptions(q.options);
+          } else if (shuffleOptions) {
             shuffleArray(q.options);
           }
-        });
-      }
+        }
+      });
 
       // Randomize question order
       if (shuffleQuestions) {
@@ -436,6 +455,7 @@ function handleClientMessage(ws, data) {
         avatar: avatar || '🐱',
         score: 0,
         streak: 0,
+        correctAnswersCount: 0,
         lastAnswer: null
       };
 
@@ -566,6 +586,7 @@ function handleClientMessage(ws, data) {
 
       if (isCorrect) {
         player.streak += 1;
+        player.correctAnswersCount = (player.correctAnswersCount || 0) + 1;
         // Speed scoring: Instant = 1000 pts, last second = 500 pts
         const timeFactor = Math.max(0, 1 - (timeTakenSec / currentQ.timeLimit) / 2);
         pointsAwarded = Math.round(1000 * timeFactor);
@@ -652,6 +673,7 @@ function startQuestion(room) {
       questionIndex: room.currentQuestionIndex,
       totalQuestions: room.quiz.questions.length,
       text: currentQ.text,
+      image: currentQ.image,
       timeLimit: currentQ.timeLimit,
       options: currentQ.options,
       totalPlayers: room.players.size
@@ -667,6 +689,7 @@ function startQuestion(room) {
         questionIndex: room.currentQuestionIndex,
         totalQuestions: room.quiz.questions.length,
         text: currentQ.text,
+        image: currentQ.image,
         timeLimit: currentQ.timeLimit,
         options: playerOptions
       }
@@ -725,16 +748,21 @@ function finishQuestion(room) {
       nickname: p.nickname,
       avatar: p.avatar,
       score: p.score,
-      streak: p.streak
+      streak: p.streak,
+      correctAnswersCount: p.correctAnswersCount || 0
     }));
 
   const top5 = sortedPlayers.slice(0, 5);
 
-  // Send Host results breakdown & leaderboard
+  // Send Host results breakdown & question details
   sendToHost(room, {
     type: 'QUESTION_RESULTS_HOST',
     payload: {
       questionIndex: room.currentQuestionIndex,
+      totalQuestions: room.quiz.questions.length,
+      text: currentQ.text,
+      image: currentQ.image,
+      options: currentQ.options,
       correctOptionIndex: correctOptionIndex,
       optionCounts: optionCounts,
       answersReceived: room.answersReceived,
@@ -744,18 +772,24 @@ function finishQuestion(room) {
     }
   });
 
-  // Send Player personal outcome
+  const correctOptObj = currentQ.options[correctOptionIndex];
+
+  // Send Player personal outcome with question & correct answer text
   for (const player of room.players.values()) {
     const ans = player.lastAnswer && player.lastAnswer.questionIndex === room.currentQuestionIndex ? player.lastAnswer : null;
     sendToPlayer(player, {
       type: 'QUESTION_RESULTS_PLAYER',
       payload: {
+        questionIndex: room.currentQuestionIndex,
+        totalQuestions: room.quiz.questions.length,
+        questionText: currentQ.text,
         isCorrect: ans ? ans.isCorrect : false,
         pointsAwarded: ans ? ans.pointsAwarded : 0,
         totalScore: player.score,
         streak: player.streak,
         answered: ans !== null,
-        correctOptionIndex: correctOptionIndex
+        correctOptionIndex: correctOptionIndex,
+        correctOptionText: correctOptObj ? correctOptObj.text : ''
       }
     });
   }
@@ -774,7 +808,8 @@ function sendLeaderboard(room) {
       nickname: p.nickname,
       avatar: p.avatar,
       score: p.score,
-      streak: p.streak
+      streak: p.streak,
+      correctAnswersCount: p.correctAnswersCount || 0
     }));
 
   const top5 = sortedPlayers.slice(0, 5);
@@ -808,20 +843,25 @@ function sendLeaderboard(room) {
 function endGame(room) {
   room.state = 'FINISHED';
 
+  const totalQuestions = room.quiz.questions.length;
   const sortedPlayers = Array.from(room.players.values())
     .sort((a, b) => b.score - a.score)
     .map((p, rank) => ({
       rank: rank + 1,
+      id: p.id,
       nickname: p.nickname,
       avatar: p.avatar,
-      score: p.score
+      score: p.score,
+      correctAnswersCount: p.correctAnswersCount || 0,
+      totalQuestions: totalQuestions
     }));
 
   const podium = {
     first: sortedPlayers[0] || null,
     second: sortedPlayers[1] || null,
     third: sortedPlayers[2] || null,
-    allPlayers: sortedPlayers
+    allPlayers: sortedPlayers,
+    totalQuestions: totalQuestions
   };
 
   broadcastToRoom(room, {
