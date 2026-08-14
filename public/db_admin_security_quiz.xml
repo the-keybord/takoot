@@ -48,9 +48,9 @@
 
   <!-- 6 (True/False) -->
   <question timeLimit="15">
-    <text>True or False: An Incremental / Transaction Log backup saves only modifications that occurred after the last backup, regardless of backup type.</text>
-    <option correct="true">True</option>
-    <option>False</option>
+    <text>True or False: A Differential Backup saves only the data modifications that occurred since the previous Differential Backup.</text>
+    <option>True</option>
+    <option correct="true">False</option>
   </question>
 
   <!-- 7 -->
@@ -125,9 +125,9 @@
 
   <!-- 15 (True/False) -->
   <question timeLimit="15">
-    <text>True or False: A ROLE in a database is a group of users with specific established rights/permissions.</text>
-    <option correct="true">True</option>
-    <option>False</option>
+    <text>True or False: Creating a database USER automatically grants that user full administrative access to all tables in the database.</text>
+    <option>True</option>
+    <option correct="true">False</option>
   </question>
 
   <!-- 16 -->
@@ -202,9 +202,9 @@
 
   <!-- 24 (True/False) -->
   <question timeLimit="15">
-    <text>True or False: DENY INSERT ON Student_Table TO user_vasea explicitly forbids user_vasea from inserting data into Student_Table.</text>
-    <option correct="true">True</option>
-    <option>False</option>
+    <text>True or False: Executing REVOKE INSERT ON Student_Table FROM user_vasea explicitly forbids user_vasea from inheriting insert permissions through a role.</text>
+    <option>True</option>
+    <option correct="true">False</option>
   </question>
 
   <!-- 25 -->
@@ -236,9 +236,9 @@
 
   <!-- 28 (True/False) -->
   <question timeLimit="15">
-    <text>True or False: Data Encryption is reversible by applying the cryptographic key to the encrypted ciphertext (mesaj + cheie = ciphertext; ciphertext + cheie = mesaj).</text>
-    <option correct="true">True</option>
-    <option>False</option>
+    <text>True or False: Data Masking is a reversible encryption technique that allows administrators to retrieve original sensitive values at any time using a key.</text>
+    <option>True</option>
+    <option correct="true">False</option>
   </question>
 
   <!-- 29 -->

@@ -189,32 +189,44 @@ async function seedDefaultAdmin() {
 async function seedDefaultQuizzes() {
   try {
     const quizzes = await getAllQuizzes();
-    const existingTitles = quizzes ? quizzes.map(q => q.title) : [];
 
     const secPath = path.join(__dirname, 'public', 'db_admin_security_quiz.xml');
-    if (fs.existsSync(secPath) && !existingTitles.includes('Database Security, Access Control & Backup Fundamentals')) {
+    if (fs.existsSync(secPath)) {
       const xml = fs.readFileSync(secPath, 'utf8');
-      await saveQuiz({
-        title: 'Database Security, Access Control & Backup Fundamentals',
-        description: '30 questions based on Data Protection, Backups, Logins/Users/Roles, GRANT/REVOKE/DENY, Masking, Encryption, Hashing',
-        xmlContent: xml,
-        questionCount: 30,
-        createdBy: 1
-      });
-      console.log('[DB] Seeded Database Security & Backup Fundamentals quiz (30 questions)');
+      const secTitle = 'Database Security, Access Control & Backup Fundamentals';
+      const existing = quizzes ? quizzes.find(q => q.title === secTitle) : null;
+      if (!existing) {
+        await saveQuiz({
+          title: secTitle,
+          description: '30 questions based on Data Protection, Backups, Logins/Users/Roles, GRANT/REVOKE/DENY, Masking, Encryption, Hashing',
+          xmlContent: xml,
+          questionCount: 30,
+          createdBy: 1
+        });
+        console.log('[DB] Seeded Database Security & Backup Fundamentals quiz (30 questions)');
+      } else {
+        await updateQuizXmlContent(existing.id, xml);
+        console.log('[DB] Updated Database Security & Backup Fundamentals quiz XML content in DB');
+      }
     }
 
     const certiportPath = path.join(__dirname, 'public', 'certiport_db_quiz.xml');
-    if (fs.existsSync(certiportPath) && !existingTitles.includes('Certiport Database & SQL Server Fundamentals')) {
+    if (fs.existsSync(certiportPath)) {
       const xml = fs.readFileSync(certiportPath, 'utf8');
-      await saveQuiz({
-        title: 'Certiport Database & SQL Server Fundamentals',
-        description: '30 practice questions covering Relational DBs, SQL DDL/DML, Constraints & Joins',
-        xmlContent: xml,
-        questionCount: 30,
-        createdBy: 1
-      });
-      console.log('[DB] Seeded Certiport Database & SQL Server quiz (30 questions)');
+      const certTitle = 'Certiport Database & SQL Server Fundamentals';
+      const existingCert = quizzes ? quizzes.find(q => q.title === certTitle) : null;
+      if (!existingCert) {
+        await saveQuiz({
+          title: certTitle,
+          description: '30 practice questions covering Relational DBs, SQL DDL/DML, Constraints & Joins',
+          xmlContent: xml,
+          questionCount: 30,
+          createdBy: 1
+        });
+        console.log('[DB] Seeded Certiport Database & SQL Server quiz (30 questions)');
+      } else {
+        await updateQuizXmlContent(existingCert.id, xml);
+      }
     }
   } catch (e) {
     console.warn('[DB] Could not seed default quiz:', e.message);
@@ -309,6 +321,21 @@ function getQuizById(id) {
   });
 }
 
+function updateQuizXmlContent(id, xmlContent) {
+  return new Promise((resolve, reject) => {
+    if (jsonStore) {
+      const q = jsonStore.getQuizById(id);
+      if (q) q.xml_content = xmlContent;
+      jsonStore.persist();
+      return resolve(true);
+    }
+    db.run('UPDATE quizzes SET xml_content = ? WHERE id = ?', [xmlContent, id], function (err) {
+      if (err) return reject(err);
+      resolve(this.changes > 0);
+    });
+  });
+}
+
 function deleteQuiz(id) {
   return new Promise((resolve, reject) => {
     if (jsonStore) {
@@ -329,6 +356,7 @@ module.exports = {
   getUserById,
   createUser,
   saveQuiz,
+  updateQuizXmlContent,
   getAllQuizzes,
   getQuizById,
   deleteQuiz
