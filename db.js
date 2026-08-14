@@ -228,6 +228,25 @@ async function seedDefaultQuizzes() {
         await updateQuizXmlContent(existingCert.id, xml);
       }
     }
+
+    const sqlTfPath = path.join(__dirname, 'public', 'sql_syntax_tf_quiz.xml');
+    if (fs.existsSync(sqlTfPath)) {
+      const xml = fs.readFileSync(sqlTfPath, 'utf8');
+      const tfTitle = 'SQL DDL & DML Syntax True/False Quiz';
+      const existingTf = quizzes ? quizzes.find(q => q.title === tfTitle) : null;
+      if (!existingTf) {
+        await saveQuiz({
+          title: tfTitle,
+          description: '20 simple True/False questions testing SQL syntax correctness for SELECT, UPDATE, INSERT, DELETE, CREATE, ALTER, and DROP statements',
+          xmlContent: xml,
+          questionCount: 20,
+          createdBy: 1
+        });
+        console.log('[DB] Seeded SQL DDL & DML Syntax True/False quiz (20 questions)');
+      } else {
+        await updateQuizXmlContent(existingTf.id, xml);
+      }
+    }
   } catch (e) {
     console.warn('[DB] Could not seed default quiz:', e.message);
   }

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <title>SQL DDL &amp; DML Syntax True/False Quiz</title>
+  <description>20 simple True/False questions testing SQL syntax correctness for SELECT, UPDATE, INSERT, DELETE, CREATE, ALTER, and DROP statements.</description>
+
+  <!-- 1 (SELECT - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+SELECT name, age FROM Students WHERE age &gt; 18;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 2 (SELECT - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+SELECT FROM Students WHERE age &gt; 18;</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 3 (INSERT - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+INSERT INTO Users (name, email) VALUES ('Alice', 'alice@example.com');</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 4 (INSERT - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+INSERT Users (name, email) VALUES ('Bob', 'bob@example.com');</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 5 (UPDATE - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+UPDATE Products SET price = 25 WHERE id = 10;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 6 (UPDATE - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+UPDATE Products VALUE price = 25 WHERE id = 10;</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 7 (DELETE - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+DELETE FROM Employees WHERE status = 'Inactive';</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 8 (DELETE - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+DELETE * FROM Employees WHERE status = 'Inactive';</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 9 (CREATE - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+CREATE TABLE Orders (id INT PRIMARY KEY, amount DECIMAL(10,2));</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 10 (CREATE - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+CREATE NEW TABLE Orders (id INT, amount DECIMAL);</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 11 (ALTER - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+ALTER TABLE Customers ADD phone VARCHAR(20);</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 12 (ALTER - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+ALTER TABLE Customers INSERT phone VARCHAR(20);</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 13 (DROP - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+DROP TABLE Old_Logs;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 14 (DROP - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+DELETE TABLE Old_Logs;</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 15 (SELECT ORDER BY - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+SELECT title, price FROM Books ORDER BY price DESC;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 16 (SELECT WHERE - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+SELECT title, price FROM Books WHERE ORDER BY price;</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 17 (UPDATE SET - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+UPDATE Members SET status = 'Active', WHERE id = 5;</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+
+  <!-- 18 (ALTER DROP COLUMN - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+ALTER TABLE Employees DROP COLUMN temp_address;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 19 (DROP DATABASE - Correct) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+DROP DATABASE Test_DB;</text>
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+
+  <!-- 20 (INSERT VALUES - Incorrect) -->
+  <question timeLimit="15">
+    <text>True or False: Is this SQL statement syntactically correct?
+
+INSERT INTO Items (code, name) SET ('A10', 'Widget');</text>
+    <option>True</option>
+    <option correct="true">False</option>
+  </question>
+</quiz>
