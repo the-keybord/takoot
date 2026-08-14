@@ -173,40 +173,63 @@
     });
   }
 
-  // 3. QUESTION COUNTDOWN MUSIC (Gong + Tension building synth rhythm)
-  function startQuestionMusic() {
+  // 3. QUESTION COUNTDOWN MUSIC (6 Distinct Melodies per Question Index)
+  function startQuestionMusic(qIndex) {
     stopAllMusic();
     if (isMuted) return;
 
-    // Trigger Gong Sound on Question Start
+    // Trigger soft two-tone chime beep on question start
     playGongSound();
 
-    playAudioFileOrFallback('question.mp3', () => {
-      if (!audioCtx) return;
-      let step = 0;
-      const bassSequence = [130.81, 130.81, 164.81, 146.83, 130.81, 174.61, 164.81, 146.83];
+    const melodyIdx = ((qIndex || 0) % 6) + 1;
+    const mp3File = `question${melodyIdx}.mp3`;
 
-      bgmInterval = setInterval(() => {
-        if (isMuted || !audioCtx) return;
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+    // Check custom audio file question1.mp3, question2.mp3... fallback to question.mp3, fallback to Web Audio synth!
+    playAudioFileOrFallback(mp3File, () => {
+      playAudioFileOrFallback('question.mp3', () => {
+        if (!audioCtx) return;
+        let step = 0;
 
-        const freq = bassSequence[step % bassSequence.length];
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(freq, now);
+        // 6 distinct melodic note patterns and synth timbre configurations per question index
+        const melodies = [
+          // 1. Classic Pentatonic Bounce (Square)
+          { wave: 'square', tempo: 220, seq: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 196.00] },
+          // 2. Funky Minor Groove (Sawtooth)
+          { wave: 'sawtooth', tempo: 200, seq: [220.00, 261.63, 293.66, 329.63, 392.00, 329.63, 293.66, 261.63] },
+          // 3. Pop Arpeggio Sparkle (Triangle)
+          { wave: 'triangle', tempo: 240, seq: [349.23, 440.00, 523.25, 698.46, 523.25, 440.00, 349.23, 261.63] },
+          // 4. Retro Synthwave Pulse (Square)
+          { wave: 'square', tempo: 210, seq: [146.83, 146.83, 174.61, 220.00, 293.66, 220.00, 174.61, 146.83] },
+          // 5. Salsa Rhythm Jam (Sine)
+          { wave: 'sine', tempo: 190, seq: [392.00, 493.88, 587.33, 659.25, 587.33, 493.88, 392.00, 293.66] },
+          // 6. EDM Driving Beat (Sawtooth)
+          { wave: 'sawtooth', tempo: 230, seq: [164.81, 196.00, 246.94, 329.63, 293.66, 246.94, 196.00, 164.81] }
+        ];
 
-        gain.gain.setValueAtTime(0.07 * masterVolume, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        const activeMelody = melodies[(qIndex || 0) % melodies.length];
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        bgmInterval = setInterval(() => {
+          if (isMuted || !audioCtx) return;
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
 
-        osc.start(now);
-        osc.stop(now + 0.2);
+          const freq = activeMelody.seq[step % activeMelody.seq.length];
+          osc.type = activeMelody.wave;
+          osc.frequency.setValueAtTime(freq, now);
 
-        step++;
-      }, 250);
+          gain.gain.setValueAtTime(0.08 * masterVolume, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.18);
+
+          step++;
+        }, activeMelody.tempo);
+      });
     });
   }
 
@@ -1083,7 +1106,10 @@
       const wrapper = document.createElement('div');
       wrapper.className = `bar-wrapper ${colorClass} ${isCorrect ? 'correct' : ''}`;
       wrapper.innerHTML = `
-        <div class="bar-count">${count}</div>
+        <div class="bar-count" style="display: flex; align-items: center; justify-content: center; gap: 0.3rem;">
+          <span>${count}</span>
+          ${isCorrect ? '<span style="display: inline-flex; width: 22px; height: 22px; background: #22c55e; color: #ffffff; border-radius: 50%; font-size: 0.8rem; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);">✓</span>' : ''}
+        </div>
         <div class="bar-column" style="height: ${heightPercent}%;"></div>
         <div style="font-weight: 800; font-size: 1.1rem; margin-top: 0.5rem;">${shapeIcons[idx]}</div>
         <div style="font-size: 0.9rem; font-weight: 800; color: ${isCorrect ? '#16a34a' : 'var(--text-secondary)'}; max-width: 140px; text-align: center; word-break: break-word; margin-top: 0.2rem;">

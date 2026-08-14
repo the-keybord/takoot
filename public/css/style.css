@@ -625,22 +625,8 @@ body::before {
   position: relative;
 }
 
-.bar-wrapper.correct .bar-column::after {
-  content: '✓';
-  position: absolute;
-  top: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #22c55e;
-  color: #fff;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+.bar-wrapper.correct .bar-column {
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
 }
 
 .bar-wrapper.opt-0 .bar-column { background: var(--color-red-grad); }
