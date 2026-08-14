@@ -202,8 +202,8 @@
             </div>
           </div>
 
-          <!-- Host Game Options: Shuffling Controls -->
-          <div id="hostGameOptions" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.9rem 1.2rem; margin-bottom: 1.2rem; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+          <!-- Host Game Options: Shuffling Controls & Time Limit Selector -->
+          <div id="hostGameOptions" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1rem 1.2rem; margin-bottom: 1.2rem; display: flex; gap: 1.5rem; justify-content: center; align-items: center; flex-wrap: wrap;">
             <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
               <input type="checkbox" id="chkShuffleQuestions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
               🔀 Randomize Questions
@@ -211,6 +211,21 @@
             <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
               <input type="checkbox" id="chkShuffleOptions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
               🔀 Randomize Answers
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
+              ⏱️ Question Time Limit:
+              <select id="selectTimeLimit" style="padding: 0.4rem 0.7rem; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); font-weight: 800; color: #0284c7; background: #ffffff; cursor: pointer;">
+                <option value="5">5 Seconds ⚡</option>
+                <option value="10">10 Seconds 🚀</option>
+                <option value="15">15 Seconds</option>
+                <option value="20" selected>20 Seconds (Default) ⏱️</option>
+                <option value="30">30 Seconds</option>
+                <option value="45">45 Seconds</option>
+                <option value="60">60 Seconds (1 Min)</option>
+                <option value="90">90 Seconds</option>
+                <option value="120">120 Seconds (2 Min)</option>
+                <option value="xml">Original XML Time Limits</option>
+              </select>
             </label>
           </div>
 

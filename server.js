@@ -362,7 +362,7 @@ function handleClientMessage(ws, data) {
 
   switch (type) {
     case 'CREATE_ROOM': {
-      const { quiz, token, shuffleQuestions = true, shuffleOptions = true } = payload || {};
+      const { quiz, token, shuffleQuestions = true, shuffleOptions = true, customTimeLimit = null } = payload || {};
 
       // Require teacher authentication for room hosting
       if (!token || !sessions.has(token)) {
@@ -378,6 +378,16 @@ function handleClientMessage(ws, data) {
 
       // Deep clone quiz to avoid mutating original structure
       const processedQuiz = JSON.parse(JSON.stringify(quiz));
+
+      // Override time limits if customTimeLimit option is specified
+      if (customTimeLimit && customTimeLimit !== 'xml' && !isNaN(customTimeLimit)) {
+        const timeLimitSec = parseInt(customTimeLimit, 10);
+        if (timeLimitSec >= 5) {
+          processedQuiz.questions.forEach(q => {
+            q.timeLimit = timeLimitSec;
+          });
+        }
+      }
 
       // Normalize True/False options and randomize other options per question
       processedQuiz.questions.forEach(q => {

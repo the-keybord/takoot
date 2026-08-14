@@ -592,15 +592,19 @@
       }
       const chkQ = document.getElementById('chkShuffleQuestions');
       const chkO = document.getElementById('chkShuffleOptions');
+      const selectTimeLimit = document.getElementById('selectTimeLimit');
+
       const shuffleQuestions = chkQ ? chkQ.checked : true;
       const shuffleOptions = chkO ? chkO.checked : true;
+      const customTimeLimit = selectTimeLimit ? selectTimeLimit.value : '20';
 
       if (parsedQuizData) {
         sendWS('CREATE_ROOM', {
           quiz: parsedQuizData,
           token: authToken,
           shuffleQuestions: shuffleQuestions,
-          shuffleOptions: shuffleOptions
+          shuffleOptions: shuffleOptions,
+          customTimeLimit: customTimeLimit
         });
       }
     });
