@@ -636,11 +636,9 @@ function startQuestion(room) {
   room.state = 'QUESTION';
   room.answersReceived = 0;
   
-  // Reset players answer state for new question
+  // Unconditionally reset players answer state for new question
   for (const player of room.players.values()) {
-    if (player.lastAnswer && player.lastAnswer.questionIndex < room.currentQuestionIndex) {
-      player.lastAnswer = null;
-    }
+    player.lastAnswer = null;
   }
 
   const currentQ = room.quiz.questions[room.currentQuestionIndex];
@@ -681,7 +679,11 @@ function startQuestion(room) {
     
     broadcastToRoom(room, {
       type: 'TIMER_TICK',
-      payload: { timeLeft: room.timeLeft }
+      payload: {
+        timeLeft: room.timeLeft,
+        questionIndex: room.currentQuestionIndex,
+        totalQuestions: room.quiz.questions.length
+      }
     });
 
     if (room.timeLeft <= 0) {

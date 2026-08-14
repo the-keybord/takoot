@@ -226,7 +226,12 @@
         break;
 
       case 'QUESTION_START_PLAYER':
-        renderPlayerQuestion(payload);
+        currentQIndex = payload.questionIndex;
+        try {
+          renderPlayerQuestion(payload);
+        } catch (err) {
+          console.error('Error rendering player question:', err);
+        }
         showView(views.playerQuestion);
         break;
 
@@ -246,6 +251,15 @@
             timerCircle.classList.add('warning');
           } else {
             timerCircle.classList.remove('warning');
+          }
+        }
+
+        // Player Auto-Recovery Check:
+        // If player missed QUESTION_START_PLAYER due to network drop and is stuck on a result/lobby view during a question
+        if (currentRole === 'PLAYER' && payload.questionIndex !== undefined) {
+          if (views.playerQuestion && !views.playerQuestion.classList.contains('active') && !views.playerSubmitted.classList.contains('active')) {
+            console.warn('⚠️ Player missed QUESTION_START_PLAYER event! Auto-recovering screen to select mode...');
+            showView(views.playerQuestion);
           }
         }
         break;
@@ -927,12 +941,14 @@
   }
 
   function renderPlayerQuestion(payload) {
-    document.getElementById('playerQNumber').textContent = `Question ${payload.questionIndex + 1} / ${payload.totalQuestions}`;
+    if (!payload || !Array.isArray(payload.options)) return;
+
+    document.getElementById('playerQNumber').textContent = `Question ${(payload.questionIndex || 0) + 1} / ${payload.totalQuestions || 1}`;
     
     // Render Question Image if present
     const playerImgBox = document.getElementById('playerQImgBox');
     const playerImg = document.getElementById('playerQImage');
-    if (payload.image && playerImgBox && playerImg) {
+    if (payload.image && typeof payload.image === 'string' && playerImgBox && playerImg) {
       playerImg.src = payload.image;
       playerImgBox.style.display = 'flex';
     } else if (playerImgBox) {
@@ -951,9 +967,11 @@
       btn.className = `player-btn opt-${idx}`;
       btn.setAttribute('data-index', idx);
       
-      // If 2 options (True/False), show text label alongside shape icon
-      if (opt.text && (opt.text.toLowerCase() === 'true' || opt.text.toLowerCase() === 'false' || payload.options.length <= 2)) {
-        btn.innerHTML = `<span style="font-size: 2.2rem;">${shapeIcons[idx] || '•'}</span><span style="font-size: 1.4rem; font-weight: 800; margin-left: 0.6rem;">${escapeHtml(opt.text)}</span>`;
+      const optText = (opt && opt.text != null) ? String(opt.text).trim() : '';
+
+      // If 2 options (True/False) or text is True/False, show text label alongside shape icon
+      if (optText && (optText.toLowerCase() === 'true' || optText.toLowerCase() === 'false' || payload.options.length <= 2)) {
+        btn.innerHTML = `<span style="font-size: 2.2rem;">${shapeIcons[idx] || '•'}</span><span style="font-size: 1.4rem; font-weight: 800; margin-left: 0.6rem;">${escapeHtml(optText)}</span>`;
       } else {
         btn.textContent = shapeIcons[idx] || '•';
       }
