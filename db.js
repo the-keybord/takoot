@@ -166,9 +166,15 @@ function initDatabase() {
             console.error('[DB] Error creating tables:', err.message);
             return reject(err);
           }
-          seedDefaultAdmin();
-          console.log('[DB] SQLite database initialized successfully at:', DB_FILE);
-          resolve();
+          seedDefaultAdmin()
+            .then(() => {
+              console.log('[DB] SQLite database initialized successfully at:', DB_FILE);
+              resolve();
+            })
+            .catch((err) => {
+              console.error('[DB] Error seeding defaults:', err);
+              resolve();
+            });
         });
       });
     });
@@ -245,6 +251,25 @@ async function seedDefaultQuizzes() {
         console.log('[DB] Seeded SQL DDL & DML Syntax True/False quiz (20 questions)');
       } else {
         await updateQuizXmlContent(existingTf.id, xml);
+      }
+    }
+
+    const roboticsPath = path.join(__dirname, 'public', 'robotics_electronics_3d_quiz.xml');
+    if (fs.existsSync(roboticsPath)) {
+      const xml = fs.readFileSync(roboticsPath, 'utf8');
+      const robTitle = 'Robotica & Electronica: Baterii Li-Ion, Alimentare si Modelare 3D';
+      const existingRob = quizzes ? quizzes.find(q => q.title === robTitle) : null;
+      if (!existingRob) {
+        await saveQuiz({
+          title: robTitle,
+          description: '15 intrebari esentiale despre tensiune electrica, celule Li-Ion 18650, LiPo, convertoare Boost, ESP32, BMS si tolerante CAD pentru printare 3D.',
+          xmlContent: xml,
+          questionCount: 15,
+          createdBy: 1
+        });
+        console.log('[DB] Seeded Robotica & Electronica quiz (15 questions)');
+      } else {
+        await updateQuizXmlContent(existingRob.id, xml);
       }
     }
   } catch (e) {
