@@ -1,13 +1,16 @@
 /**
  * Takoot - Hidden Quiz Builder Client Engine (public/js/builder.js)
- * Visual question creation, local image attachments, and ZIP/XML packaging.
+ * Dual-Mode Studio:
+ * Mode 1: Visual Form Builder
+ * Mode 2: XML & Paste-Image Studio (Direct clipboard Ctrl+V image pasting & visual assignment)
  */
 
 (function () {
   'use strict';
 
+  let currentMode = 'visual'; // 'visual' or 'xml_images'
   let questions = [];
-  let currentQuizTitle = 'My Awesome Quiz';
+  let mediaPool = []; // Array of { id, filename, dataUrl }
 
   // Starter Questions
   function createDefaultQuestions() {
@@ -39,8 +42,37 @@
     ];
   }
 
-  // ==================== RENDER ENGINE ====================
-  function renderAllQuestions() {
+  // ==================== MODE SWITCHING ====================
+  function switchMode(mode) {
+    currentMode = mode;
+    const btnVisual = document.getElementById('btnModeVisual');
+    const btnXml = document.getElementById('btnModeXmlImages');
+    const secVisual = document.getElementById('modeVisualSection');
+    const secXml = document.getElementById('modeXmlImagesSection');
+
+    if (mode === 'visual') {
+      if (btnVisual) btnVisual.classList.add('active');
+      if (btnXml) btnXml.classList.remove('active');
+      if (secVisual) secVisual.style.display = 'block';
+      if (secXml) secXml.style.display = 'none';
+      renderAllQuestionsVisual();
+    } else {
+      if (btnVisual) btnVisual.classList.remove('active');
+      if (btnXml) btnXml.classList.add('active');
+      if (secVisual) secVisual.style.display = 'none';
+      if (secXml) secXml.style.display = 'block';
+
+      // Update XML textarea from current questions
+      const textarea = document.getElementById('xmlStudioTextarea');
+      if (textarea) {
+        textarea.value = generateQuizXml(false);
+      }
+      renderMode2XmlStudio();
+    }
+  }
+
+  // ==================== MODE 1: VISUAL FORM BUILDER ====================
+  function renderAllQuestionsVisual() {
     const container = document.getElementById('questionsContainer');
     if (!container) return;
     container.innerHTML = '';
@@ -97,7 +129,7 @@
       } else {
         imgBox.innerHTML = `
           <div style="font-size: 2rem; margin-bottom: 0.2rem;">🖼️</div>
-          <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.95rem;">Click or Drag &amp; Drop Picture Here</div>
+          <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.95rem;">Click, Drag &amp; Drop, or Paste (<kbd style="background: #e2e8f0; padding: 2px 5px; border-radius: 4px;">Ctrl+V</kbd>) Picture</div>
           <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Supports PNG, JPG, WebP, GIF</div>
           <input type="file" class="q-img-file-input" accept="image/*" style="display: none;">
         `;
@@ -139,13 +171,11 @@
           if (q.type === 'TF') {
             q.options.forEach((o, i) => { o.isCorrect = (i === oIndex); });
           } else {
-            // For MC, can toggle
             opt.isCorrect = !opt.isCorrect;
-            // Ensure at least one is correct
             const anyCorrect = q.options.some(o => o.isCorrect);
             if (!anyCorrect) opt.isCorrect = true;
           }
-          renderAllQuestions();
+          renderAllQuestionsVisual();
         });
 
         // Input change
@@ -163,7 +193,7 @@
       card.appendChild(imgBox);
       card.appendChild(choiceGrid);
 
-      // Event Listeners for Question Header Tools
+      // Event Listeners for Tools
       const timeSelect = card.querySelector('.q-timelimit-select');
       timeSelect.addEventListener('change', (e) => {
         q.timeLimit = parseInt(e.target.value, 10);
@@ -181,7 +211,7 @@
             const temp = questions[qIndex - 1];
             questions[qIndex - 1] = questions[qIndex];
             questions[qIndex] = temp;
-            renderAllQuestions();
+            renderAllQuestionsVisual();
           }
         });
       }
@@ -193,7 +223,7 @@
             const temp = questions[qIndex + 1];
             questions[qIndex + 1] = questions[qIndex];
             questions[qIndex] = temp;
-            renderAllQuestions();
+            renderAllQuestionsVisual();
           }
         });
       }
@@ -204,7 +234,7 @@
           const clone = JSON.parse(JSON.stringify(q));
           clone.id = 'q_' + Math.random().toString(36).substr(2, 9);
           questions.splice(qIndex + 1, 0, clone);
-          renderAllQuestions();
+          renderAllQuestionsVisual();
         });
       }
 
@@ -213,7 +243,7 @@
         btnDelete.addEventListener('click', () => {
           if (questions.length > 1 && confirm(`Delete Question #${qIndex + 1}?`)) {
             questions.splice(qIndex, 1);
-            renderAllQuestions();
+            renderAllQuestionsVisual();
           }
         });
       }
@@ -226,7 +256,7 @@
         btnRemoveImg.addEventListener('click', (e) => {
           e.stopPropagation();
           q.image = null;
-          renderAllQuestions();
+          renderAllQuestionsVisual();
         });
       }
 
@@ -234,7 +264,7 @@
         imgBox.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
-          if (file) handleImageFile(file, q);
+          if (file) handleImageFileForQuestion(file, q);
         });
 
         // Drag and drop image
@@ -249,7 +279,7 @@
           e.preventDefault();
           imgBox.style.borderColor = '#cbd5e1';
           if (e.dataTransfer.files.length > 0) {
-            handleImageFile(e.dataTransfer.files[0], q);
+            handleImageFileForQuestion(e.dataTransfer.files[0], q);
           }
         });
       }
@@ -258,7 +288,274 @@
     });
   }
 
-  function handleImageFile(file, questionObj) {
+  // ==================== MODE 2: XML & PASTE-IMAGE STUDIO ====================
+  function renderMode2XmlStudio() {
+    updateMode2StatusBadges();
+    renderMediaPoolGrid();
+    renderXmlQuestionsAttachList();
+  }
+
+  function updateMode2StatusBadges() {
+    const badgeCount = document.getElementById('xmlModeBadgeCount');
+    const badgeTitle = document.getElementById('xmlModeBadgeTitle');
+    const badgeImages = document.getElementById('xmlModeBadgeImages');
+    const titleInput = document.getElementById('quizTitleInput');
+
+    const totalQ = questions.length;
+    const title = (titleInput ? titleInput.value.trim() : '') || 'Untitled Quiz';
+    const totalAttached = questions.filter(q => q.image && q.image.dataUrl).length;
+
+    if (badgeCount) {
+      badgeCount.textContent = `❓ ${totalQ} Questions Detected`;
+      badgeCount.className = totalQ > 0 ? 'status-badge active' : 'status-badge';
+    }
+    if (badgeTitle) {
+      badgeTitle.textContent = title;
+      badgeTitle.style.display = title ? 'inline-flex' : 'none';
+    }
+    if (badgeImages) {
+      badgeImages.textContent = `🖼️ ${totalAttached} Images Attached`;
+      badgeImages.style.display = totalAttached > 0 ? 'inline-flex' : 'none';
+    }
+  }
+
+  // Render the Media Pool tray
+  function renderMediaPoolGrid() {
+    const grid = document.getElementById('mediaPoolGrid');
+    const countEl = document.getElementById('mediaPoolCount');
+    if (!grid) return;
+
+    if (countEl) countEl.textContent = mediaPool.length;
+
+    if (mediaPool.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 1.5rem; font-size: 0.9rem;">
+          No images in pool yet. Copy any picture to clipboard and press <strong>Ctrl+V</strong>, or drop files above!
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = '';
+    mediaPool.forEach((media, mIndex) => {
+      const item = document.createElement('div');
+      item.className = 'media-item';
+
+      // Check which question currently uses this media (if any)
+      const currentAssignedQIndex = questions.findIndex(q => q.image && q.image.dataUrl === media.dataUrl);
+
+      let optionsHtml = `<option value="-1">-- Unassigned --</option>`;
+      questions.forEach((q, qIndex) => {
+        const isSelected = (currentAssignedQIndex === qIndex);
+        const qShortText = q.text ? (q.text.length > 25 ? q.text.substring(0, 25) + '...' : q.text) : `Question ${qIndex + 1}`;
+        optionsHtml += `<option value="${qIndex}" ${isSelected ? 'selected' : ''}>Q${qIndex + 1}: ${escapeHtml(qShortText)}</option>`;
+      });
+
+      item.innerHTML = `
+        <img src="${media.dataUrl}" class="media-thumb" alt="media">
+        <div style="font-size: 0.75rem; font-weight: 700; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center;">
+          ${escapeHtml(media.filename || `Pasted Image #${mIndex + 1}`)}
+        </div>
+        <select class="media-item-assign-select">
+          ${optionsHtml}
+        </select>
+        <button type="button" class="btn btn-sm btn-secondary btn-del-media" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; color: #ef4444; width: 100%;">
+          🗑️ Delete
+        </button>
+      `;
+
+      // Dropdown selection to assign
+      const selectEl = item.querySelector('.media-item-assign-select');
+      selectEl.addEventListener('change', (e) => {
+        const chosenQIdx = parseInt(e.target.value, 10);
+        // Remove from previously assigned question if needed
+        questions.forEach(q => {
+          if (q.image && q.image.dataUrl === media.dataUrl) {
+            q.image = null;
+          }
+        });
+
+        if (chosenQIdx >= 0 && questions[chosenQIdx]) {
+          questions[chosenQIdx].image = {
+            filename: media.filename,
+            dataUrl: media.dataUrl
+          };
+        }
+
+        renderMode2XmlStudio();
+      });
+
+      // Delete from media pool
+      const delBtn = item.querySelector('.btn-del-media');
+      delBtn.addEventListener('click', () => {
+        // Remove from questions if assigned
+        questions.forEach(q => {
+          if (q.image && q.image.dataUrl === media.dataUrl) q.image = null;
+        });
+        mediaPool.splice(mIndex, 1);
+        renderMode2XmlStudio();
+      });
+
+      grid.appendChild(item);
+    });
+  }
+
+  // Render questions list with image attachment slots in Mode 2
+  function renderXmlQuestionsAttachList() {
+    const list = document.getElementById('xmlQuestionsAttachList');
+    if (!list) return;
+
+    if (questions.length === 0) {
+      list.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No questions found in XML. Write or paste XML above to begin.</div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    questions.forEach((q, qIndex) => {
+      const row = document.createElement('div');
+      row.className = `xml-attach-row ${q.image && q.image.dataUrl ? 'has-img' : ''}`;
+      row.setAttribute('data-qindex', qIndex);
+
+      // Left: Info & Choices preview
+      const info = document.createElement('div');
+      info.className = 'xml-attach-info';
+
+      let optionsPreview = '<div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.4rem;">';
+      (q.options || []).forEach((opt, oIdx) => {
+        optionsPreview += `<span style="font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px; ${opt.isCorrect ? 'background: #dcfce7; color: #15803d; font-weight: 800;' : 'background: #f1f5f9; color: #64748b;'}">${opt.isCorrect ? '✓ ' : ''}${escapeHtml(opt.text || `Choice ${oIdx + 1}`)}</span>`;
+      });
+      optionsPreview += '</div>';
+
+      info.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 800; color: var(--color-accent);">
+          <span>Question #${qIndex + 1}</span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;">⏱️ ${q.timeLimit || 20}s</span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;">(${q.type === 'TF' ? 'True/False' : `${q.options.length} Choices`})</span>
+        </div>
+        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-top: 0.3rem;">
+          ${escapeHtml(q.text || '(Empty question text)')}
+        </div>
+        ${optionsPreview}
+      `;
+
+      // Right: Image Slot
+      const slot = document.createElement('div');
+      slot.className = 'xml-attach-slot';
+
+      if (q.image && q.image.dataUrl) {
+        slot.innerHTML = `
+          <div style="width: 100%; text-align: center; background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.4rem;">
+            <img src="${q.image.dataUrl}" class="xml-slot-thumb" alt="attached image">
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${escapeHtml(q.image.filename || 'Attached image')}
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary btn-detach-q-img" style="font-size: 0.75rem; color: #ef4444; width: 100%;">
+            🗑️ Remove Picture
+          </button>
+        `;
+
+        const detachBtn = slot.querySelector('.btn-detach-q-img');
+        detachBtn.addEventListener('click', () => {
+          q.image = null;
+          renderMode2XmlStudio();
+        });
+      } else {
+        // Quick assign dropdown from media pool
+        let quickSelectHtml = `<option value="">-- Choose from Pool --</option>`;
+        mediaPool.forEach((m, mIdx) => {
+          quickSelectHtml += `<option value="${mIdx}">Image #${mIdx + 1} (${escapeHtml(m.filename)})</option>`;
+        });
+
+        slot.innerHTML = `
+          <div class="xml-slot-box" tabindex="0" title="Click and press Ctrl+V to paste screenshot for this question!">
+            <span style="font-size: 1.5rem;">🖼️</span>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-top: 0.2rem;">
+              Click &amp; Paste <kbd style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">Ctrl+V</kbd>
+            </span>
+          </div>
+          ${mediaPool.length > 0 ? `
+            <select class="form-input quick-pool-select" style="font-size: 0.75rem; padding: 0.25rem; width: 100%;">
+              ${quickSelectHtml}
+            </select>
+          ` : ''}
+        `;
+
+        // Slot click focuses it for direct paste
+        const slotBox = slot.querySelector('.xml-slot-box');
+        slotBox.addEventListener('paste', (e) => {
+          e.stopPropagation();
+          handlePasteEvent(e, q);
+        });
+
+        const quickSelect = slot.querySelector('.quick-pool-select');
+        if (quickSelect) {
+          quickSelect.addEventListener('change', (e) => {
+            const mIdx = parseInt(e.target.value, 10);
+            if (!isNaN(mIdx) && mediaPool[mIdx]) {
+              q.image = {
+                filename: mediaPool[mIdx].filename,
+                dataUrl: mediaPool[mIdx].dataUrl
+              };
+              renderMode2XmlStudio();
+            }
+          });
+        }
+      }
+
+      row.appendChild(info);
+      row.appendChild(slot);
+      list.appendChild(row);
+    });
+  }
+
+  // ==================== CLIPBOARD & IMAGE PASTE HANDLER ====================
+  function handlePasteEvent(event, targetQuestion = null) {
+    const items = (event.clipboardData || window.clipboardData).items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        event.preventDefault();
+        const blob = items[i].getAsFile();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          const ext = blob.type.split('/')[1] || 'png';
+          const filename = `Pasted_Image_${mediaPool.length + 1}.${ext}`;
+
+          const mediaObj = {
+            id: 'img_' + Math.random().toString(36).substr(2, 9),
+            filename: filename,
+            dataUrl: dataUrl
+          };
+
+          // Add to media pool
+          mediaPool.push(mediaObj);
+
+          // If pasted directly into a target question slot:
+          if (targetQuestion) {
+            targetQuestion.image = {
+              filename: filename,
+              dataUrl: dataUrl
+            };
+          }
+
+          if (currentMode === 'xml_images') {
+            renderMode2XmlStudio();
+          } else {
+            renderAllQuestionsVisual();
+          }
+        };
+
+        reader.readAsDataURL(blob);
+        break;
+      }
+    }
+  }
+
+  function handleImageFileForQuestion(file, questionObj) {
     if (!file.type.startsWith('image/')) {
       alert('Please select a valid image file (PNG, JPG, WebP, GIF, SVG).');
       return;
@@ -266,37 +563,114 @@
 
     const reader = new FileReader();
     reader.onload = (e) => {
+      const dataUrl = e.target.result;
       questionObj.image = {
         filename: file.name,
-        dataUrl: e.target.result
+        dataUrl: dataUrl
       };
-      renderAllQuestions();
+
+      // Also add to media pool if not already present
+      if (!mediaPool.some(m => m.dataUrl === dataUrl)) {
+        mediaPool.push({
+          id: 'img_' + Math.random().toString(36).substr(2, 9),
+          filename: file.name,
+          dataUrl: dataUrl
+        });
+      }
+
+      if (currentMode === 'visual') {
+        renderAllQuestionsVisual();
+      } else {
+        renderMode2XmlStudio();
+      }
     };
     reader.readAsDataURL(file);
   }
 
-  // ==================== XML GENERATOR ====================
+  // ==================== XML PARSER & GENERATOR ====================
+  async function parseAndLoadXml(xmlText, imagesMap = {}) {
+    try {
+      const res = await fetch('/api/parse-xml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: xmlText
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to parse XML.');
+      }
+
+      const parsed = data.quiz;
+      const titleInput = document.getElementById('quizTitleInput');
+      if (titleInput && parsed.title) {
+        titleInput.value = parsed.title;
+      }
+
+      questions = parsed.questions.map((q) => {
+        const isTF = q.options && q.options.length === 2 &&
+          (String(q.options[0].text).trim().toLowerCase() === 'true' ||
+           String(q.options[0].text).trim().toLowerCase() === 'false');
+
+        let imgObj = null;
+        if (q.image) {
+          const cleanRef = q.image.replace(/^images[\\/]/, '').trim();
+          if (imagesMap[q.image]) {
+            imgObj = { filename: q.image, dataUrl: imagesMap[q.image] };
+          } else if (imagesMap[cleanRef]) {
+            imgObj = { filename: cleanRef, dataUrl: imagesMap[cleanRef] };
+          } else if (q.image.startsWith('data:image')) {
+            imgObj = { filename: 'embedded_image.png', dataUrl: q.image };
+          }
+
+          if (imgObj && !mediaPool.some(m => m.dataUrl === imgObj.dataUrl)) {
+            mediaPool.push({
+              id: 'img_' + Math.random().toString(36).substr(2, 9),
+              filename: imgObj.filename,
+              dataUrl: imgObj.dataUrl
+            });
+          }
+        }
+
+        return {
+          id: 'q_' + Math.random().toString(36).substr(2, 9),
+          type: isTF ? 'TF' : 'MC',
+          text: q.text,
+          timeLimit: q.timeLimit || 20,
+          image: imgObj,
+          options: q.options.map(o => ({ text: o.text, isCorrect: !!o.isCorrect }))
+        };
+      });
+
+      if (currentMode === 'visual') {
+        renderAllQuestionsVisual();
+      } else {
+        renderMode2XmlStudio();
+      }
+    } catch (err) {
+      alert('Error parsing XML: ' + err.message);
+    }
+  }
+
   function generateQuizXml(forZipExport = false) {
-    const title = document.getElementById('quizTitleInput').value.trim() || 'My Awesome Quiz';
+    const title = (document.getElementById('quizTitleInput') ? document.getElementById('quizTitleInput').value.trim() : '') || 'My Awesome Quiz';
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<quiz title="${escapeXmlAttr(title)}">\n`;
 
     questions.forEach((q, idx) => {
       let imgAttr = '';
-      if (q.image) {
+      if (q.image && q.image.dataUrl) {
         if (forZipExport) {
-          // Point to images/ subfolder inside zip
           const ext = (q.image.filename || 'image.png').split('.').pop();
           const cleanName = `images/q${idx + 1}_img.${ext}`;
           imgAttr = ` image="${cleanName}"`;
         } else {
-          // Self-contained Data URI
           imgAttr = ` image="${q.image.dataUrl}"`;
         }
       }
 
       xml += `  <question text="${escapeXmlAttr(q.text)}" timeLimit="${q.timeLimit || 20}"${imgAttr}>\n`;
-      q.options.forEach(opt => {
+      (q.options || []).forEach(opt => {
         const correctAttr = opt.isCorrect ? ' correct="true"' : '';
         xml += `    <option${correctAttr}>${escapeXmlText(opt.text)}</option>\n`;
       });
@@ -307,27 +681,26 @@
     return xml;
   }
 
-  // ==================== ZIP EXPORTER (WITH IMAGES) ====================
+  // ==================== EXPORT ACTIONS ====================
   async function exportAsZip() {
     if (!window.JSZip) {
       alert('JSZip library is missing.');
       return;
     }
 
-    const title = document.getElementById('quizTitleInput').value.trim() || 'takoot_quiz';
+    const title = (document.getElementById('quizTitleInput') ? document.getElementById('quizTitleInput').value.trim() : '') || 'takoot_quiz';
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
     const zip = new JSZip();
     const xmlContent = generateQuizXml(true);
     zip.file('quiz.xml', xmlContent);
 
-    // Add images folder
+    // Images folder
     const imgFolder = zip.folder('images');
     questions.forEach((q, idx) => {
       if (q.image && q.image.dataUrl) {
         const ext = (q.image.filename || 'image.png').split('.').pop();
         const filename = `q${idx + 1}_img.${ext}`;
-        // Extract base64 payload from Data URL
         const base64Index = q.image.dataUrl.indexOf(';base64,');
         if (base64Index !== -1) {
           const base64Data = q.image.dataUrl.substring(base64Index + 8);
@@ -340,7 +713,6 @@
     triggerDownload(content, `${slug}.zip`);
   }
 
-  // ==================== XML EXPORTER MODAL ====================
   function showXmlExportModal() {
     const xml = generateQuizXml(false);
     const modal = document.getElementById('xmlExportModal');
@@ -350,7 +722,7 @@
   }
 
   function downloadXmlFile() {
-    const title = document.getElementById('quizTitleInput').value.trim() || 'takoot_quiz';
+    const title = (document.getElementById('quizTitleInput') ? document.getElementById('quizTitleInput').value.trim() : '') || 'takoot_quiz';
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
     const xml = generateQuizXml(false);
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
@@ -366,20 +738,7 @@
     });
   }
 
-  function triggerDownload(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-
-  // ==================== HOST NOW ====================
   function hostQuizNow() {
-    // Generate self-contained XML and extracted images map
     const xml = generateQuizXml(false);
     const imageMap = {};
     questions.forEach((q, idx) => {
@@ -399,13 +758,27 @@
     window.location.href = '/host';
   }
 
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // ==================== IMPORT (.XML / .ZIP) ====================
   async function handleImportFile(file) {
     if (file.name.toLowerCase().endsWith('.zip')) {
       await handleImportZip(file);
     } else {
-      const text = await readFileAsText(file);
-      await parseAndLoadXml(text);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        await parseAndLoadXml(reader.result);
+      };
+      reader.readAsText(file);
     }
   }
 
@@ -440,6 +813,14 @@
           imagesMap[name] = dataUrl;
           const baseName = name.split('/').pop().split('\\').pop();
           imagesMap[baseName] = dataUrl;
+
+          if (!mediaPool.some(m => m.dataUrl === dataUrl)) {
+            mediaPool.push({
+              id: 'img_' + Math.random().toString(36).substr(2, 9),
+              filename: baseName,
+              dataUrl: dataUrl
+            });
+          }
         }
       }
 
@@ -449,68 +830,10 @@
 
       const xmlText = await xmlFile.async('text');
       await parseAndLoadXml(xmlText, imagesMap);
+      alert(`ZIP imported successfully with ${questions.length} questions and images!`);
     } catch (err) {
       alert('Import failed: ' + err.message);
     }
-  }
-
-  async function parseAndLoadXml(xmlText, imagesMap = {}) {
-    try {
-      const res = await fetch('/api/parse-xml', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: xmlText
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to parse XML.');
-      }
-
-      const parsed = data.quiz;
-      document.getElementById('quizTitleInput').value = parsed.title || 'Imported Quiz';
-
-      questions = parsed.questions.map((q) => {
-        const isTF = q.options && q.options.length === 2 &&
-          (String(q.options[0].text).trim().toLowerCase() === 'true' ||
-           String(q.options[0].text).trim().toLowerCase() === 'false');
-
-        let imgObj = null;
-        if (q.image) {
-          const cleanRef = q.image.replace(/^images[\\/]/, '').trim();
-          if (imagesMap[q.image]) {
-            imgObj = { filename: q.image, dataUrl: imagesMap[q.image] };
-          } else if (imagesMap[cleanRef]) {
-            imgObj = { filename: cleanRef, dataUrl: imagesMap[cleanRef] };
-          } else if (q.image.startsWith('data:image')) {
-            imgObj = { filename: 'embedded_image.png', dataUrl: q.image };
-          }
-        }
-
-        return {
-          id: 'q_' + Math.random().toString(36).substr(2, 9),
-          type: isTF ? 'TF' : 'MC',
-          text: q.text,
-          timeLimit: q.timeLimit || 20,
-          image: imgObj,
-          options: q.options.map(o => ({ text: o.text, isCorrect: !!o.isCorrect }))
-        };
-      });
-
-      renderAllQuestions();
-      alert(`Imported ${questions.length} questions successfully!`);
-    } catch (err) {
-      alert('Error parsing quiz XML: ' + err.message);
-    }
-  }
-
-  function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
-    });
   }
 
   // ==================== HELPERS ====================
@@ -532,8 +855,15 @@
     });
   }
 
-  // ==================== SETUP EVENTS ====================
+  // ==================== EVENT LISTENERS & SETUP ====================
   function setupBuilderEvents() {
+    // Mode Switcher Tabs
+    const btnVisual = document.getElementById('btnModeVisual');
+    const btnXml = document.getElementById('btnModeXmlImages');
+    if (btnVisual) btnVisual.addEventListener('click', () => switchMode('visual'));
+    if (btnXml) btnXml.addEventListener('click', () => switchMode('xml_images'));
+
+    // Top action buttons
     const btnAddMC = document.getElementById('btnAddMCQuestion');
     const btnAddTF = document.getElementById('btnAddTFQuestion');
     const btnNew = document.getElementById('btnNewQuiz');
@@ -562,7 +892,7 @@
             { text: '', isCorrect: false }
           ]
         });
-        renderAllQuestions();
+        renderAllQuestionsVisual();
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       });
     }
@@ -581,17 +911,20 @@
             { text: 'False', isCorrect: false }
           ]
         });
-        renderAllQuestions();
+        renderAllQuestionsVisual();
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       });
     }
 
     if (btnNew) {
       btnNew.addEventListener('click', () => {
-        if (confirm('Start a new blank quiz? Unsaved changes will be discarded.')) {
+        if (confirm('Start a new blank quiz? Current changes will be reset.')) {
           questions = createDefaultQuestions();
-          document.getElementById('quizTitleInput').value = 'My Awesome Quiz';
-          renderAllQuestions();
+          mediaPool = [];
+          const titleInput = document.getElementById('quizTitleInput');
+          if (titleInput) titleInput.value = 'My Awesome Quiz';
+          if (currentMode === 'visual') renderAllQuestionsVisual();
+          else renderMode2XmlStudio();
         }
       });
     }
@@ -617,10 +950,146 @@
     if (btnCopyXml) btnCopyXml.addEventListener('click', copyXmlToClipboard);
     if (btnDownloadXml) btnDownloadXml.addEventListener('click', downloadXmlFile);
 
-    const logo = document.getElementById('logoHomeBtn');
-    if (logo) {
-      logo.addEventListener('click', () => {
-        window.location.href = '/builder';
+    // Mode 2 XML text editor live parser
+    const xmlTextarea = document.getElementById('xmlStudioTextarea');
+    let xmlDebounce = null;
+    if (xmlTextarea) {
+      xmlTextarea.addEventListener('input', () => {
+        clearTimeout(xmlDebounce);
+        xmlDebounce = setTimeout(() => {
+          const val = xmlTextarea.value.trim();
+          if (val.length > 15) {
+            parseAndLoadXml(val);
+          }
+        }, 400);
+      });
+    }
+
+    const btnXmlClear = document.getElementById('btnXmlModeClear');
+    if (btnXmlClear) {
+      btnXmlClear.addEventListener('click', () => {
+        if (xmlTextarea) xmlTextarea.value = '';
+        questions = [];
+        renderMode2XmlStudio();
+      });
+    }
+
+    const btnXmlTemplate = document.getElementById('btnXmlModeInsertTemplate');
+    if (btnXmlTemplate) {
+      btnXmlTemplate.addEventListener('click', () => {
+        const template = `<?xml version="1.0" encoding="UTF-8"?>
+<quiz title="Science & World Challenge">
+  <question text="What is the chemical symbol for Gold?" timeLimit="20">
+    <option>Ag</option>
+    <option correct="true">Au</option>
+    <option>Fe</option>
+    <option>Cu</option>
+  </question>
+  <question text="The Pacific Ocean is the largest ocean on Earth." timeLimit="15">
+    <option correct="true">True</option>
+    <option>False</option>
+  </question>
+  <question text="How many planets are in our Solar System?" timeLimit="20">
+    <option>7</option>
+    <option correct="true">8</option>
+    <option>9</option>
+    <option>10</option>
+  </question>
+</quiz>`;
+        if (xmlTextarea) {
+          xmlTextarea.value = template;
+          parseAndLoadXml(template);
+        }
+      });
+    }
+
+    // Global Paste Listener for window (press Ctrl+V anywhere!)
+    window.addEventListener('paste', (e) => {
+      // Don't intercept if user is typing text in an input or textarea
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea') {
+        const items = (e.clipboardData || window.clipboardData).items;
+        let hasImg = false;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) hasImg = true;
+        }
+        if (!hasImg) return; // Allow normal text paste
+      }
+
+      handlePasteEvent(e);
+    });
+
+    // Global Paste Dropzone
+    const pasteZone = document.getElementById('globalPasteZone');
+    const mediaFileInput = document.getElementById('mediaPoolFileInput');
+    const btnClearMedia = document.getElementById('btnClearMediaPool');
+
+    if (pasteZone) {
+      pasteZone.addEventListener('click', () => {
+        if (mediaFileInput) mediaFileInput.click();
+      });
+      ['dragenter', 'dragover'].forEach(name => {
+        pasteZone.addEventListener(name, (e) => {
+          e.preventDefault();
+          pasteZone.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        pasteZone.addEventListener(name, (e) => {
+          e.preventDefault();
+          pasteZone.classList.remove('dragover');
+        });
+      });
+      pasteZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (!files) return;
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].type.startsWith('image/')) {
+            const reader = new FileReader();
+            const f = files[i];
+            reader.onload = (ev) => {
+              mediaPool.push({
+                id: 'img_' + Math.random().toString(36).substr(2, 9),
+                filename: f.name,
+                dataUrl: ev.target.result
+              });
+              renderMode2XmlStudio();
+            };
+            reader.readAsDataURL(f);
+          }
+        }
+      });
+    }
+
+    if (mediaFileInput) {
+      mediaFileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (!files) return;
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].type.startsWith('image/')) {
+            const reader = new FileReader();
+            const f = files[i];
+            reader.onload = (ev) => {
+              mediaPool.push({
+                id: 'img_' + Math.random().toString(36).substr(2, 9),
+                filename: f.name,
+                dataUrl: ev.target.result
+              });
+              renderMode2XmlStudio();
+            };
+            reader.readAsDataURL(f);
+          }
+        }
+      });
+    }
+
+    if (btnClearMedia) {
+      btnClearMedia.addEventListener('click', () => {
+        if (confirm('Clear all images from the Media Pool?')) {
+          mediaPool = [];
+          questions.forEach(q => q.image = null);
+          renderMode2XmlStudio();
+        }
       });
     }
   }
@@ -628,7 +1097,7 @@
   // ==================== INITIALIZATION ====================
   document.addEventListener('DOMContentLoaded', () => {
     questions = createDefaultQuestions();
-    renderAllQuestions();
+    renderAllQuestionsVisual();
     setupBuilderEvents();
   });
 

@@ -48,40 +48,142 @@
       </div>
     </div>
 
-    <!-- Quiz Title & Metadata Card -->
-    <div class="builder-meta-card">
-      <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-        <div style="flex: 2; min-width: 260px;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">QUIZ TITLE</label>
-          <input type="text" id="quizTitleInput" class="form-input" placeholder="e.g. Space &amp; Astronomy Trivia" value="My Awesome Quiz" style="font-weight: 800; font-size: 1.2rem;">
-        </div>
-        <div style="flex: 1; min-width: 180px;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">DEFAULT TIME LIMIT</label>
-          <select id="quizDefaultTime" class="form-input" style="font-weight: 700;">
-            <option value="10">10 Seconds ⚡</option>
-            <option value="15">15 Seconds</option>
-            <option value="20" selected>20 Seconds (Standard)</option>
-            <option value="30">30 Seconds</option>
-            <option value="60">60 Seconds</option>
-          </select>
+    <!-- Mode Switcher Tabs -->
+    <div class="builder-mode-switcher">
+      <button class="builder-mode-btn active" id="btnModeVisual">
+        <span>🎴 Mode 1: Visual Form Builder</span>
+      </button>
+      <button class="builder-mode-btn" id="btnModeXmlImages">
+        <span>📋 Mode 2: XML &amp; Paste-Image Studio</span>
+      </button>
+    </div>
+
+    <!-- ==================== MODE 1: VISUAL FORM BUILDER ==================== -->
+    <section id="modeVisualSection" style="display: block;">
+      <!-- Quiz Title & Metadata Card -->
+      <div class="builder-meta-card">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <div style="flex: 2; min-width: 260px;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">QUIZ TITLE</label>
+            <input type="text" id="quizTitleInput" class="form-input" placeholder="e.g. Space &amp; Astronomy Trivia" value="My Awesome Quiz" style="font-weight: 800; font-size: 1.2rem;">
+          </div>
+          <div style="flex: 1; min-width: 180px;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">DEFAULT TIME LIMIT</label>
+            <select id="quizDefaultTime" class="form-input" style="font-weight: 700;">
+              <option value="10">10 Seconds ⚡</option>
+              <option value="15">15 Seconds</option>
+              <option value="20" selected>20 Seconds (Standard)</option>
+              <option value="30">30 Seconds</option>
+              <option value="60">60 Seconds</option>
+            </select>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Questions Container -->
-    <div id="questionsContainer">
-      <!-- Dynamic Question Cards injected here -->
-    </div>
+      <!-- Questions Container -->
+      <div id="questionsContainer">
+        <!-- Dynamic Question Cards injected here -->
+      </div>
 
-    <!-- Bottom Add Question Buttons -->
-    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
-      <button class="btn btn-primary btn-lg" id="btnAddMCQuestion" style="min-width: 260px;">
-        ➕ Add Multiple Choice Question
-      </button>
-      <button class="btn btn-secondary btn-lg" id="btnAddTFQuestion" style="min-width: 220px;">
-        ⚖️ Add True / False Question
-      </button>
-    </div>
+      <!-- Bottom Add Question Buttons -->
+      <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-primary btn-lg" id="btnAddMCQuestion" style="min-width: 260px;">
+          ➕ Add Multiple Choice Question
+        </button>
+        <button class="btn btn-secondary btn-lg" id="btnAddTFQuestion" style="min-width: 220px;">
+          ⚖️ Add True / False Question
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== MODE 2: XML & PASTE-IMAGE STUDIO ==================== -->
+    <section id="modeXmlImagesSection" style="display: none;">
+      
+      <!-- XML Editor Card -->
+      <div class="builder-meta-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">1. Write or Paste Quiz XML</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Enter your XML below. Questions will automatically appear in the Image Attacher below.</p>
+          </div>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn btn-sm btn-secondary" id="btnXmlModeInsertTemplate">📄 Insert Template</button>
+            <button class="btn btn-sm btn-secondary" id="btnXmlModeClear">🧹 Clear</button>
+          </div>
+        </div>
+
+        <textarea id="xmlStudioTextarea" class="xml-editor-textarea" rows="10" spellcheck="false" placeholder="Paste your quiz XML here...
+
+<quiz title=&quot;Space Challenge&quot;>
+  <question text=&quot;What is the red planet?&quot; timeLimit=&quot;20&quot;>
+    <option correct=&quot;true&quot;>Mars</option>
+    <option>Venus</option>
+    <option>Jupiter</option>
+    <option>Saturn</option>
+  </question>
+</quiz>"></textarea>
+
+        <div style="display: flex; gap: 0.6rem; align-items: center; margin-top: 0.8rem; flex-wrap: wrap;">
+          <span class="status-badge active" id="xmlModeBadgeCount">❓ 0 Questions Detected</span>
+          <span class="status-badge badge-title" id="xmlModeBadgeTitle" style="display: none;">Untitled</span>
+          <span class="status-badge badge-images" id="xmlModeBadgeImages">🖼️ 0 Images Attached</span>
+        </div>
+      </div>
+
+      <!-- Paste Images & Media Pool Card -->
+      <div class="media-pool-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">2. Paste or Drop Images</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Take screenshots or copy pictures anywhere and press <kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 800;">Ctrl+V</kbd>!</p>
+          </div>
+          <div style="display: flex; gap: 0.4rem;">
+            <label class="btn btn-sm btn-secondary file-label">
+              <input type="file" id="mediaPoolFileInput" multiple accept="image/*" style="display: none;">
+              📁 Browse Pictures
+            </label>
+            <button class="btn btn-sm btn-secondary" id="btnClearMediaPool" style="color: #ef4444;">🗑️ Clear Pool</button>
+          </div>
+        </div>
+
+        <!-- Global Clipboard Paste Dropzone -->
+        <div class="paste-drop-zone" id="globalPasteZone">
+          <div style="font-size: 2.5rem; margin-bottom: 0.4rem;">📋</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">
+            Click here &amp; press <span style="color: var(--color-accent);">Ctrl + V</span> to paste copied image
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.3rem;">
+            Or drag &amp; drop picture files directly here
+          </div>
+        </div>
+
+        <!-- Media Pool Grid (Pasted Images Tray) -->
+        <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.5rem;">
+          Media Pool (<span id="mediaPoolCount">0</span> images ready to assign):
+        </div>
+        <div class="media-pool-grid" id="mediaPoolGrid">
+          <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 1.5rem; font-size: 0.9rem;">
+            No images in pool yet. Copy an image to clipboard and press <strong>Ctrl+V</strong>, or drop files above!
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Question Image Assignment List -->
+      <div class="builder-meta-card">
+        <h2 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem;">3. Assign Images to Quiz Questions</h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem;">
+          Choose which picture belongs to each question. You can pick from the dropdown, drop an image, or paste while clicking on the slot.
+        </p>
+
+        <div id="xmlQuestionsAttachList">
+          <!-- Dynamic Question Assignment Rows -->
+          <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            Enter XML above to see the question list.
+          </div>
+        </div>
+      </div>
+
+    </section>
 
   </div>
 
