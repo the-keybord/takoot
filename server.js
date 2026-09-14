@@ -2,37 +2,23 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const crypto = require('crypto');
 const { XMLParser } = require('fast-xml-parser');
-const db = require('./db');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server, maxPayload: 50 * 1024 * 1024 });
 
 const PORT = process.env.PORT || 3000;
 
-// Sessions store for teacher auth (token -> user info)
-const sessions = new Map();
-
-// Middleware: Require Teacher Authentication
-function requireTeacherAuth(req, res, next) {
-  const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
-  let token = authHeader;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  }
-  if (!token || !sessions.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized. Teacher login required.' });
-  }
-  req.user = sessions.get(token);
-  next();
-}
-
-// Body parser for JSON / raw text for XML API
-app.use(express.json());
-app.use(express.text({ type: ['text/xml', 'application/xml', 'text/plain'], limit: '5mb' }));
+// Body parser for JSON / raw text for XML API (50mb limit for embedded images)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.text({ type: ['text/xml', 'application/xml', 'text/plain'], limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Hidden Quiz Builder direct route
+app.get('/builder', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'builder.html'));
+});
 
 // XML Parser setup
 const xmlParserOptions = {
@@ -158,104 +144,7 @@ app.post('/api/parse-xml', (req, res) => {
   }
 });
 
-// AUTH API ROUTES
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password required.' });
-    }
-    const user = await db.getUserByUsername(username);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
-    }
-    const isValid = db.verifyPassword(password, user.salt, user.password_hash);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
-    }
-    const token = crypto.randomBytes(32).toString('hex');
-    const sessionData = { userId: user.id, username: user.username, role: user.role, createdAt: Date.now() };
-    sessions.set(token, sessionData);
-    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role } });
-  } catch (err) {
-    res.status(500).json({ error: err.message || 'Login failed.' });
-  }
-});
 
-app.get('/api/auth/me', (req, res) => {
-  const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
-  let token = authHeader;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  }
-  if (token && sessions.has(token)) {
-    return res.json({ authenticated: true, user: sessions.get(token) });
-  }
-  res.json({ authenticated: false });
-});
-
-app.post('/api/auth/logout', (req, res) => {
-  const authHeader = req.headers['authorization'] || req.headers['x-auth-token'];
-  let token = authHeader;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  }
-  if (token && sessions.has(token)) {
-    sessions.delete(token);
-  }
-  res.json({ success: true });
-});
-
-// QUIZ DATABASE STORAGE ROUTES
-app.get('/api/quizzes', async (req, res) => {
-  try {
-    const list = await db.getAllQuizzes();
-    res.json({ success: true, quizzes: list });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/quizzes/:id', async (req, res) => {
-  try {
-    const quiz = await db.getQuizById(req.params.id);
-    if (!quiz) return res.status(404).json({ error: 'Quiz not found.' });
-    const parsedQuiz = parseQuizXML(quiz.xml_content);
-    res.json({ success: true, quizMeta: quiz, parsedQuiz: parsedQuiz });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/quizzes', requireTeacherAuth, async (req, res) => {
-  try {
-    const xmlContent = req.body;
-    if (!xmlContent || typeof xmlContent !== 'string') {
-      return res.status(400).json({ error: 'Empty or invalid XML payload.' });
-    }
-    const parsed = parseQuizXML(xmlContent);
-    const saved = await db.saveQuiz({
-      title: parsed.title,
-      description: parsed.description,
-      xmlContent: xmlContent,
-      questionCount: parsed.questions.length,
-      createdBy: req.user.userId
-    });
-    res.json({ success: true, quiz: saved });
-  } catch (err) {
-    res.status(400).json({ error: err.message || 'Failed to save quiz to database.' });
-  }
-});
-
-app.delete('/api/quizzes/:id', requireTeacherAuth, async (req, res) => {
-  try {
-    const deleted = await db.deleteQuiz(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Quiz not found or already deleted.' });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // WebSocket Connection Handling
 wss.on('connection', (ws) => {
@@ -362,15 +251,7 @@ function handleClientMessage(ws, data) {
 
   switch (type) {
     case 'CREATE_ROOM': {
-      const { quiz, token, shuffleQuestions = true, shuffleOptions = true, customTimeLimit = null } = payload || {};
-
-      // Require teacher authentication for room hosting
-      if (!token || !sessions.has(token)) {
-        return ws.send(JSON.stringify({
-          type: 'ERROR',
-          message: 'Teacher login required to host a quiz room.'
-        }));
-      }
+      const { quiz, shuffleQuestions = true, shuffleOptions = true, customTimeLimit = null } = payload || {};
 
       if (!quiz || !quiz.questions || quiz.questions.length === 0) {
         return ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid quiz data' }));
@@ -880,14 +761,10 @@ function endGame(room) {
   });
 }
 
-db.initDatabase().then(() => {
-  server.listen(PORT, () => {
-    console.log(`================================================`);
-    console.log(`🚀 Takoot Quiz Server running on port ${PORT}`);
-    console.log(`👉 Host & Join Web App: http://localhost:${PORT}`);
-    console.log(`🔑 Embedded single-file DB active & ready`);
-    console.log(`================================================`);
-  });
-}).catch(err => {
-  console.error('Failed to initialize database:', err);
+server.listen(PORT, () => {
+  console.log(`================================================`);
+  console.log(`🚀 Takoot Quiz Server running on port ${PORT}`);
+  console.log(`👉 Main App (Host & Join): http://localhost:${PORT}`);
+  console.log(`🎨 Quiz Builder: http://localhost:${PORT}/builder`);
+  console.log(`================================================`);
 });

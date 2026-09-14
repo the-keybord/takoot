@@ -5,24 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Takoot - Real-Time Interactive Quiz</title>
   <meta name="description" content="Ultra-lightweight real-time interactive quiz platform for classrooms and events.">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
   <!-- QRCode Library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- JSZip Library for ZIP Quiz Unpacking & Image Bundles -->
+  <script src="/js/jszip.min.js"></script>
 </head>
 <body>
 
   <!-- Top Navigation Header -->
   <header class="app-header">
-    <div class="brand-logo" id="logoHomeBtn">
+    <div class="brand-logo" id="logoHomeBtn" style="cursor: pointer;">
       ⚡ Takoot <span class="badge">Live</span>
     </div>
     <div class="header-controls" style="display: flex; gap: 0.8rem; align-items: center;">
       <button class="btn btn-sm btn-secondary" id="btnToggleSound" style="display: none;" title="Toggle Music & Sound Effects">🔊 Sound: ON</button>
-      <div id="authStatusBox" style="font-size: 0.9rem; font-weight: 700; color: #0284c7; display: none;">
-        🎓 <span id="authUsernameDisplay">Teacher</span>
-      </div>
-      <button class="btn btn-sm btn-secondary" id="btnLoginModalOpen">🎓 Teacher Login</button>
-      <button class="btn btn-sm btn-secondary" id="btnLogoutBtn" style="display: none;">Logout</button>
+      <button class="btn btn-sm btn-secondary" id="btnNavStudio" style="display: none;">📝 Quiz Editor</button>
+      <button class="btn btn-sm btn-primary" id="btnNavJoin">🎮 Join with PIN</button>
       <button class="btn btn-secondary" id="navResetBtn" style="display: none;">Leave Game</button>
     </div>
   </header>
@@ -30,221 +29,103 @@
   <!-- Main View Container -->
   <main class="container">
 
-    <!-- ==================== 1. LANDING VIEW ==================== -->
-    <section id="landingView" class="view-section active">
-      <div style="text-align: center; margin-top: 1rem;">
-        <h1 style="font-size: 3rem; font-weight: 900; margin-bottom: 0.5rem;">Interactive Live Quizzes</h1>
-        <p style="font-size: 1.2rem; color: var(--text-secondary);">Join a game with a PIN code or host your own test using XML!</p>
-      </div>
-
-      <div class="landing-grid">
-        <!-- Join Game Card -->
-        <div class="card">
-          <div class="card-icon">📱</div>
-          <h2 class="card-title">Join a Game</h2>
-          <p class="card-desc">Enter the 6-digit Game PIN displayed on the main screen to participate.</p>
-          <button class="btn btn-primary btn-lg" id="btnGoJoin">Enter Game PIN</button>
-        </div>
-
-        <!-- Host Game Card -->
-        <div class="card">
-          <div class="card-icon">🚀</div>
-          <h2 class="card-title">Host a Quiz</h2>
-          <p class="card-desc">Upload your question bank XML file and display the PIN & QR code.</p>
-          <button class="btn btn-secondary btn-lg" id="btnGoHost">Host a Quiz</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 2. PLAYER JOIN VIEW (STEP-BY-STEP) ==================== -->
-    <section id="playerJoinView" class="view-section">
-      <div class="card" style="width: 100%; max-width: 440px; margin-top: 1rem;">
-        <div id="joinErrorMsg" style="color: #ef4444; font-weight: 700; margin-bottom: 1rem; display: none;"></div>
-
-        <!-- STEP 1: PIN ENTRY -->
-        <div id="joinStepPin" style="width: 100%;">
-          <h2 class="card-title" style="font-size: 2.2rem; font-weight: 900;">Enter Game PIN</h2>
-          <p class="card-desc">Look at the main screen for the 6-digit code</p>
-          <div class="form-group">
-            <input type="number" id="inputPin" class="form-input" placeholder="PIN Code" maxlength="6" style="font-size: 2rem; letter-spacing: 4px;">
+    <!-- ==================== 1. MAIN QUIZ STUDIO VIEW (BIG TEXT FIELD & UPLOAD) ==================== -->
+    <section id="studioView" class="view-section active">
+      <div class="studio-card">
+        <div class="studio-header">
+          <div>
+            <h1 class="studio-title">⚡ Live Quiz Studio</h1>
+            <p class="studio-subtitle">Write, paste XML, or upload a quiz file (<span class="code-pill">.xml</span>, <span class="code-pill">.zip with images</span>, or folder)</p>
           </div>
-          <button class="btn btn-primary btn-lg" id="btnNextPin" style="width: 100%;">Enter ➔</button>
-        </div>
-
-        <!-- STEP 2: NICKNAME & AVATAR -->
-        <div id="joinStepNick" style="width: 100%; display: none;">
-          <h2 class="card-title">Choose Nickname</h2>
-          <p class="card-desc">Select an avatar and nickname for the scoreboard</p>
-          <div class="form-group">
-            <input type="text" id="inputNickname" class="form-input" placeholder="Your Nickname" maxlength="18">
-          </div>
-          <div class="form-group">
-            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">PICK AVATAR</label>
-            <div class="avatar-grid" id="avatarGrid">
-              <span class="avatar-opt selected" data-avatar="🐱">🐱</span>
-              <span class="avatar-opt" data-avatar="🦊">🦊</span>
-              <span class="avatar-opt" data-avatar="🚀">🚀</span>
-              <span class="avatar-opt" data-avatar="🦁">🦁</span>
-              <span class="avatar-opt" data-avatar="⚡">⚡</span>
-              <span class="avatar-opt" data-avatar="🐼">🐼</span>
-              <span class="avatar-opt" data-avatar="🐯">🐯</span>
-              <span class="avatar-opt" data-avatar="🦄">🦄</span>
-              <span class="avatar-opt" data-avatar="🐸">🐸</span>
-              <span class="avatar-opt" data-avatar="🐨">🐨</span>
-              <span class="avatar-opt" data-avatar="🐲">🐲</span>
-              <span class="avatar-opt" data-avatar="🐙">🐙</span>
-              <span class="avatar-opt" data-avatar="👽">👽</span>
-              <span class="avatar-opt" data-avatar="🤖">🤖</span>
-              <span class="avatar-opt" data-avatar="🥷">🥷</span>
-              <span class="avatar-opt" data-avatar="🦉">🦉</span>
-            </div>
-          </div>
-          <button class="btn btn-success btn-lg" id="btnSubmitJoin" style="width: 100%;">OK, Go! 🚀</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 3. PLAYER LOBBY WAIT VIEW ==================== -->
-    <section id="playerLobbyView" class="view-section">
-      <div class="card" style="width: 100%; max-width: 480px; margin-top: 2rem;">
-        <div style="font-size: 4rem; margin-bottom: 0.5rem;" class="animate-bounce" id="playerLobbyAvatar">🐱</div>
-        <h2 class="card-title" id="playerLobbyName">Alex</h2>
-        <p class="card-desc" style="font-size: 1.1rem; color: #38bdf8; font-weight: 700;">You're in!</p>
-        <p class="card-desc">See your name on the main screen? Wait for the host to start the test...</p>
-      </div>
-    </section>
-
-    <!-- ==================== 4. PLAYER QUESTION PAD VIEW ==================== -->
-    <section id="playerQuestionView" class="view-section">
-      <div style="width: 100%; max-width: 600px; text-align: center; margin-bottom: 1rem;">
-        <span class="badge" style="background: var(--surface-glass); padding: 0.4rem 1rem; border-radius: var(--radius-full); font-size: 1rem;" id="playerQNumber">Question 1</span>
-        <h2 id="playerQText" style="font-size: 1.5rem; font-weight: 800; margin-top: 0.5rem;">Select your answer below</h2>
-        <!-- Player Question Image Container -->
-        <div class="question-img-box" id="playerQImgBox" style="display: none; margin-top: 0.8rem;">
-          <img id="playerQImage" class="question-img" src="" alt="Question image">
-        </div>
-      </div>
-
-      <div class="player-pad" id="playerPad">
-        <button class="player-btn opt-0" data-index="0">▲</button>
-        <button class="player-btn opt-1" data-index="1">◆</button>
-        <button class="player-btn opt-2" data-index="2">●</button>
-        <button class="player-btn opt-3" data-index="3">■</button>
-      </div>
-    </section>
-
-    <!-- ==================== 5. PLAYER SUBMITTED WAIT VIEW ==================== -->
-    <section id="playerSubmittedView" class="view-section">
-      <div class="card" style="width: 100%; max-width: 480px; margin-top: 2rem;">
-        <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">✅</div>
-        <h2 class="card-title">Answer Sent!</h2>
-        <p class="card-desc">Waiting for time to expire or other players to answer...</p>
-      </div>
-    </section>
-
-    <!-- ==================== 6. PLAYER OUTCOME RESULT VIEW ==================== -->
-    <section id="playerResultView" class="view-section">
-      <div class="outcome-card" id="outcomeCard">
-        <div id="outcomeIcon" style="font-size: 4rem;">🎉</div>
-        <div class="outcome-title" id="outcomeTitle">Correct!</div>
-        <div class="outcome-points" id="outcomePoints">+950 pts</div>
-        <div class="streak-badge" id="outcomeStreak">🔥 Streak: 2</div>
-      </div>
-
-      <!-- Question & Correct Answer Breakdown for Player -->
-      <div id="playerResultQuestionBox" style="margin-top: 1.2rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-md); padding: 1.2rem; max-width: 500px; width: 100%; text-align: left; box-shadow: 0 4px 14px rgba(0,0,0,0.06); display: none;">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;" id="playerResultQNumber">Question 1</div>
-        <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0.4rem 0;" id="playerResultQText">Question text appears here...</div>
-        <div style="font-size: 0.95rem; font-weight: 700; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 0.6rem 0.9rem; margin-top: 0.6rem;" id="playerResultCorrectAns">
-          ✓ Correct Answer: <span id="playerResultCorrectText" style="font-weight: 800;">Option Text</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 7. HOST UPLOAD XML VIEW ==================== -->
-    <section id="hostUploadView" class="view-section">
-      <div class="card" style="width: 100%; max-width: 680px; margin-top: 1rem;">
-        <h2 class="card-title">Host Quiz Setup</h2>
-        <p class="card-desc">Choose a saved quiz from the database library or upload a new XML file</p>
-
-        <!-- Teacher Login Banner if NOT logged in -->
-        <div id="teacherAuthBanner" style="background: rgba(239, 68, 68, 0.15); border: 1px dashed #ef4444; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; text-align: center; display: none;">
-          <div style="font-size: 1.3rem; font-weight: 800; color: #f87171;">🔒 Teacher Account Required</div>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0.4rem 0 0.8rem 0;">Only logged-in teachers can start live quiz games or manage stored XML quizzes.</p>
-          <button class="btn btn-primary" id="btnPromptLogin">Log In as Teacher</button>
-        </div>
-
-        <div id="teacherHostPanel">
-          <div id="xmlErrorMsg" style="color: #ef4444; font-weight: 700; margin-bottom: 1rem; display: none;"></div>
-
-          <!-- Saved Quizzes Database Library Section -->
-          <div style="margin-bottom: 1.5rem; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-              <h3 style="font-size: 1.1rem; font-weight: 800; color: #38bdf8;">🗄️ Saved Quizzes Library (SQLite DB)</h3>
-              <button class="btn btn-sm btn-secondary" id="btnRefreshQuizDb">🔄 Refresh</button>
-            </div>
-            <div id="savedQuizzesList" class="saved-quizzes-grid">
-              <div style="color: var(--text-muted); font-size: 0.9rem; padding: 0.8rem; text-align: center;">Loading library...</div>
-            </div>
-          </div>
-
-          <div style="border-top: 1px solid var(--surface-glass-border); margin: 1.5rem 0; position: relative; text-align: center;">
-            <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ffffff; border: 1px solid var(--surface-glass-border); border-radius: var(--radius-full); padding: 0.1rem 0.8rem; font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">OR UPLOAD NEW XML</span>
-          </div>
-
-          <div class="drop-zone" id="dropZone">
-            <div class="drop-zone-icon">📄</div>
-            <div style="font-weight: 700; font-size: 1.1rem;">Click or Drag & Drop XML File</div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem;">Supports Takoot & standard quiz XML schemas</div>
-            <input type="file" id="xmlFileInput" accept=".xml" style="display: none;">
-          </div>
-
-          <div id="quizPreviewBox" style="width: 100%; background: rgba(0,0,0,0.04); border: 1px solid #cbd5e1; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.2rem; display: none; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
-              <div>
-                <div style="font-weight: 800; font-size: 1.2rem; color: #0284c7;" id="previewTitle">Quiz Title</div>
-                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.2rem;" id="previewMeta">5 Questions Loaded</div>
-              </div>
-              <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-sm btn-secondary" id="btnReviewXml">👁️ Review XML</button>
-                <button class="btn btn-sm btn-success" id="btnSaveXmlToDb" style="display: none;">💾 Save to DB</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Host Game Options: Shuffling Controls & Time Limit Selector -->
-          <div id="hostGameOptions" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1rem 1.2rem; margin-bottom: 1.2rem; display: flex; gap: 1.5rem; justify-content: center; align-items: center; flex-wrap: wrap;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
-              <input type="checkbox" id="chkShuffleQuestions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
-              🔀 Randomize Questions
+          <div class="studio-toolbar">
+            <label class="btn btn-sm btn-secondary file-label" title="Upload XML or ZIP archive">
+              <input type="file" id="studioFileInput" accept=".xml,.zip" style="display: none;">
+              📁 Upload File (.xml / .zip)
             </label>
-            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
-              <input type="checkbox" id="chkShuffleOptions" checked style="width: 18px; height: 18px; accent-color: var(--color-accent); cursor: pointer;">
-              🔀 Randomize Answers
+            <label class="btn btn-sm btn-secondary file-label" title="Upload a folder of XML + images">
+              <input type="file" id="studioFolderInput" webkitdirectory directory style="display: none;">
+              📂 Upload Folder
             </label>
-            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: #0f172a; cursor: pointer;">
-              ⏱️ Question Time Limit:
-              <select id="selectTimeLimit" style="padding: 0.4rem 0.7rem; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); font-weight: 800; color: #0284c7; background: #ffffff; cursor: pointer;">
-                <option value="5">5 Seconds ⚡</option>
-                <option value="10">10 Seconds 🚀</option>
-                <option value="15">15 Seconds</option>
-                <option value="20" selected>20 Seconds (Default) ⏱️</option>
-                <option value="30">30 Seconds</option>
-                <option value="45">45 Seconds</option>
-                <option value="60">60 Seconds (1 Min)</option>
-                <option value="90">90 Seconds</option>
-                <option value="120">120 Seconds (2 Min)</option>
-                <option value="xml">Original XML Time Limits</option>
-              </select>
-            </label>
+            <button class="btn btn-sm btn-secondary" id="btnInsertTemplate" title="Insert starter XML template">📄 Insert Template</button>
+            <button class="btn btn-sm btn-secondary" id="btnClearEditor" title="Clear text field">🧹 Clear</button>
           </div>
+        </div>
 
-          <div style="display: flex; gap: 0.8rem; width: 100%; flex-wrap: wrap;">
-            <a href="/db_admin_security_quiz.xml" download="db_admin_security_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 DB Security XML</a>
-            <a href="/certiport_db_quiz.xml" download="certiport_db_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 Certiport DB XML</a>
-            <a href="/sql_syntax_tf_quiz.xml" download="sql_syntax_tf_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 SQL Syntax T/F XML</a>
-            <a href="/robotics_electronics_3d_quiz.xml" download="robotics_electronics_3d_quiz.xml" class="btn btn-secondary" style="flex: 1;">📥 Robotică &amp; CAD XML</a>
-            <button class="btn btn-primary" id="btnCreateRoom" style="flex: 2;" disabled>Create Game Room</button>
+        <!-- Big XML Text Editor with Drop Zone Wrapper -->
+        <div class="editor-drop-zone" id="editorDropZone">
+          <div class="editor-drop-overlay" id="editorDropOverlay">
+            <div class="overlay-content">
+              <span style="font-size: 3rem;">📦</span>
+              <h3>Drop XML or ZIP File Here</h3>
+              <p>Images inside ZIP packages will be automatically converted and embedded!</p>
+            </div>
+          </div>
+          <textarea id="xmlEditorArea" class="xml-editor-textarea" spellcheck="false" placeholder="Write or paste your Quiz XML code here...
+
+Example format:
+&lt;quiz title=&quot;My Awesome Quiz&quot;&gt;
+  &lt;question text=&quot;What is the capital of France?&quot; timeLimit=&quot;20&quot;&gt;
+    &lt;option&gt;Rome&lt;/option&gt;
+    &lt;option correct=&quot;true&quot;&gt;Paris&lt;/option&gt;
+    &lt;option&gt;Madrid&lt;/option&gt;
+    &lt;option&gt;Berlin&lt;/option&gt;
+  &lt;/question&gt;
+&lt;/quiz&gt;"></textarea>
+        </div>
+
+        <!-- Live Quiz Detection Status & Image Badges -->
+        <div class="studio-status-row">
+          <div class="status-badges">
+            <span class="status-badge" id="badgeQCount">❓ 0 Questions Detected</span>
+            <span class="status-badge badge-title" id="badgeQuizTitle" style="display: none;">Untitled</span>
+            <span class="status-badge badge-images" id="badgeImagesCount" style="display: none;">🖼️ 0 Images</span>
+          </div>
+          <div id="studioErrorMsg" class="studio-error-banner" style="display: none;"></div>
+        </div>
+
+        <!-- Host Game Options Bar -->
+        <div class="studio-options-bar">
+          <label class="option-toggle">
+            <input type="checkbox" id="chkShuffleQuestions" checked>
+            <span>🔀 Randomize Questions</span>
+          </label>
+          <label class="option-toggle">
+            <input type="checkbox" id="chkShuffleOptions" checked>
+            <span>🔀 Randomize Answers</span>
+          </label>
+          <label class="option-select-label">
+            <span>⏱️ Question Time:</span>
+            <select id="selectTimeLimit" class="time-limit-select">
+              <option value="5">5 Seconds ⚡</option>
+              <option value="10">10 Seconds 🚀</option>
+              <option value="15">15 Seconds</option>
+              <option value="20" selected>20 Seconds (Default) ⏱️</option>
+              <option value="30">30 Seconds</option>
+              <option value="45">45 Seconds</option>
+              <option value="60">60 Seconds (1 Min)</option>
+              <option value="90">90 Seconds</option>
+              <option value="120">120 Seconds (2 Min)</option>
+              <option value="xml">Original XML Time Limits</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="studio-actions-row">
+          <button class="btn btn-primary btn-lg" id="btnLaunchHost" disabled style="flex: 2; font-size: 1.25rem;">
+            🚀 Host Quiz &amp; Launch Room
+          </button>
+          <button class="btn btn-secondary btn-lg" id="btnPreviewQuiz" disabled style="flex: 1;">
+            👁️ Preview Questions
+          </button>
+        </div>
+
+        <!-- Player Quick Join Strip -->
+        <div class="player-quick-join-strip">
+          <span class="strip-label">🎮 Joining a game as a player?</span>
+          <div class="strip-form">
+            <input type="number" id="quickPinInput" class="strip-input" placeholder="6-Digit PIN" maxlength="6">
+            <button class="btn btn-success" id="btnQuickJoinGo">Join Game ➔</button>
           </div>
         </div>
       </div>
@@ -405,33 +286,7 @@
       </div>
     </section>
 
-    <!-- Teacher Login Modal -->
-    <div id="loginModal" class="modal-overlay" style="display: none;">
-      <div class="card modal-content" style="max-width: 420px; width: 90%; text-align: left; padding: 2rem; position: relative;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <h2 class="card-title" style="margin: 0; font-size: 1.6rem;">🎓 Teacher Login</h2>
-          <button id="btnCloseLoginModal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
-        </div>
-        <p class="card-desc" style="margin-bottom: 1.2rem;">Only authenticated teachers can host live quizzes and manage the XML question library.</p>
-        
-        <div id="loginErrorMsg" style="color: #ef4444; font-weight: 700; margin-bottom: 1rem; display: none; font-size: 0.9rem;"></div>
-        
-        <form id="loginForm">
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem;">USERNAME</label>
-            <input type="text" id="loginUsername" class="form-input" placeholder="e.g. admin" required value="admin">
-          </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.4rem;">PASSWORD</label>
-            <input type="password" id="loginPassword" class="form-input" placeholder="e.g. admin123" required value="admin123">
-          </div>
-          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.85rem; color: #c084fc; margin-bottom: 1.2rem;">
-            💡 Initial Admin Credentials:<br>Username: <strong>admin</strong> | Password: <strong>admin123</strong>
-          </div>
-          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Sign In ➔</button>
-        </form>
-      </div>
-    </div>
+
     <!-- Quiz Inspector & Visual Previewer Modal -->
     <div id="xmlReviewModal" class="modal-overlay" style="display: none;">
       <div class="card modal-content" style="max-width: 760px; width: 92%; text-align: left; padding: 1.8rem; position: relative;">

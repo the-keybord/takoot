@@ -8,7 +8,7 @@ This document defines the core behavioral, architectural, and design rules for t
 
 ---
 
-## 1. Test Activation & Hosting Rules ⚡
+## 1. Test Activation & Hosting Rules ⚡f
 - **Public & Unauthenticated Direct Links**: Test activation links (`/host/:id` or `/?hostQuizId=:id`) MUST remain **public and open to anyone**. Anyone with the link (e.g., substitute teachers or guest hosts) can access the activation screen and click `▶️ PLAY TEST & CREATE ROOM` without logging in. Public can also run the actual game
 - **Restricted Teacher Library**: Access to browse the full test bank library requires teacher authentication (`admin` / `admin123`).
 - **Automatic Login Redirects**: Non-logged-in users attempting to access the main Host Library without a direct test activation link must be prompted with the Teacher Login modal (pre-filled with `admin` / `admin123`).
