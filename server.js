@@ -15,6 +15,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.text({ type: ['text/xml', 'application/xml', 'text/plain'], limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Direct route for Host Studio (hidden from main page)
+app.get('/host', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'host.html'));
+});
+
 // Hidden Quiz Builder direct route
 app.get('/builder', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'builder.html'));

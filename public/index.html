@@ -3,15 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Takoot - Real-Time Interactive Quiz</title>
-  <meta name="description" content="Ultra-lightweight real-time interactive quiz platform for classrooms and events.">
+  <title>Takoot - Join Game</title>
+  <meta name="description" content="Enter Game PIN to join live interactive Takoot quizzes.">
   <link rel="stylesheet" href="/css/style.css">
-  <!-- QRCode Library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <!-- JSZip Library for ZIP Quiz Unpacking & Image Bundles -->
-  <script src="/js/jszip.min.js"></script>
 </head>
-<body>
+<body class="player-body">
 
   <!-- Top Navigation Header -->
   <header class="app-header">
@@ -19,313 +15,163 @@
       ⚡ Takoot <span class="badge">Live</span>
     </div>
     <div class="header-controls" style="display: flex; gap: 0.8rem; align-items: center;">
-      <button class="btn btn-sm btn-secondary" id="btnToggleSound" style="display: none;" title="Toggle Music & Sound Effects">🔊 Sound: ON</button>
-      <button class="btn btn-sm btn-secondary" id="btnNavStudio" style="display: none;">📝 Quiz Editor</button>
-      <button class="btn btn-sm btn-primary" id="btnNavJoin">🎮 Join with PIN</button>
-      <button class="btn btn-secondary" id="navResetBtn" style="display: none;">Leave Game</button>
+      <button class="btn btn-sm btn-secondary" id="btnToggleSound" title="Toggle Music & Sound Effects">🔊 Sound: ON</button>
+      <button class="btn btn-secondary btn-sm" id="navResetBtn" style="display: none;">Leave Game</button>
     </div>
   </header>
 
-  <!-- Main View Container -->
-  <main class="container">
+  <!-- Main Container -->
+  <main class="container" style="display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 140px);">
 
-    <!-- ==================== 1. MAIN QUIZ STUDIO VIEW (BIG TEXT FIELD & UPLOAD) ==================== -->
-    <section id="studioView" class="view-section active">
-      <div class="studio-card">
-        <div class="studio-header">
-          <div>
-            <h1 class="studio-title">⚡ Live Quiz Studio</h1>
-            <p class="studio-subtitle">Write, paste XML, or upload a quiz file (<span class="code-pill">.xml</span>, <span class="code-pill">.zip with images</span>, or folder)</p>
+    <!-- ==================== 1. PLAYER JOIN VIEW ==================== -->
+    <section id="playerJoinView" class="view-section active" style="width: 100%; max-width: 440px;">
+      <div class="card join-card" style="text-align: center; padding: 2.2rem 1.8rem;">
+        
+        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; animation: floatBounce 3s ease-in-out infinite;">⚡</div>
+        <h1 style="font-size: 2.4rem; font-weight: 900; margin-bottom: 0.3rem; letter-spacing: -0.5px;">Takoot!</h1>
+
+        <div id="joinErrorMsg" class="studio-error-banner" style="display: none; margin-bottom: 1.2rem;"></div>
+
+        <!-- STEP 1: Enter Game PIN -->
+        <div id="joinStepPin" style="display: block;">
+          <p style="color: var(--text-secondary); font-size: 1.05rem; font-weight: 600; margin-bottom: 1.5rem;">
+            Enter Game PIN to join:
+          </p>
+          <div style="margin-bottom: 1.4rem;">
+            <input type="text" 
+                   id="inputPin" 
+                   class="form-input" 
+                   placeholder="Game PIN" 
+                   maxlength="6" 
+                   pattern="[0-9]*" 
+                   inputmode="numeric" 
+                   autocomplete="off" 
+                   autofocus
+                   style="text-align: center; font-size: 2.2rem; font-weight: 900; letter-spacing: 4px; padding: 0.8rem; border: 3px solid #cbd5e1; border-radius: var(--radius-md);">
           </div>
-          <div class="studio-toolbar">
-            <label class="btn btn-sm btn-secondary file-label" title="Upload XML or ZIP archive">
-              <input type="file" id="studioFileInput" accept=".xml,.zip" style="display: none;">
-              📁 Upload File (.xml / .zip)
-            </label>
-            <label class="btn btn-sm btn-secondary file-label" title="Upload a folder of XML + images">
-              <input type="file" id="studioFolderInput" webkitdirectory directory style="display: none;">
-              📂 Upload Folder
-            </label>
-            <button class="btn btn-sm btn-secondary" id="btnInsertTemplate" title="Insert starter XML template">📄 Insert Template</button>
-            <button class="btn btn-sm btn-secondary" id="btnClearEditor" title="Clear text field">🧹 Clear</button>
-          </div>
-        </div>
-
-        <!-- Big XML Text Editor with Drop Zone Wrapper -->
-        <div class="editor-drop-zone" id="editorDropZone">
-          <div class="editor-drop-overlay" id="editorDropOverlay">
-            <div class="overlay-content">
-              <span style="font-size: 3rem;">📦</span>
-              <h3>Drop XML or ZIP File Here</h3>
-              <p>Images inside ZIP packages will be automatically converted and embedded!</p>
-            </div>
-          </div>
-          <textarea id="xmlEditorArea" class="xml-editor-textarea" spellcheck="false" placeholder="Write or paste your Quiz XML code here...
-
-Example format:
-&lt;quiz title=&quot;My Awesome Quiz&quot;&gt;
-  &lt;question text=&quot;What is the capital of France?&quot; timeLimit=&quot;20&quot;&gt;
-    &lt;option&gt;Rome&lt;/option&gt;
-    &lt;option correct=&quot;true&quot;&gt;Paris&lt;/option&gt;
-    &lt;option&gt;Madrid&lt;/option&gt;
-    &lt;option&gt;Berlin&lt;/option&gt;
-  &lt;/question&gt;
-&lt;/quiz&gt;"></textarea>
-        </div>
-
-        <!-- Live Quiz Detection Status & Image Badges -->
-        <div class="studio-status-row">
-          <div class="status-badges">
-            <span class="status-badge" id="badgeQCount">❓ 0 Questions Detected</span>
-            <span class="status-badge badge-title" id="badgeQuizTitle" style="display: none;">Untitled</span>
-            <span class="status-badge badge-images" id="badgeImagesCount" style="display: none;">🖼️ 0 Images</span>
-          </div>
-          <div id="studioErrorMsg" class="studio-error-banner" style="display: none;"></div>
-        </div>
-
-        <!-- Host Game Options Bar -->
-        <div class="studio-options-bar">
-          <label class="option-toggle">
-            <input type="checkbox" id="chkShuffleQuestions" checked>
-            <span>🔀 Randomize Questions</span>
-          </label>
-          <label class="option-toggle">
-            <input type="checkbox" id="chkShuffleOptions" checked>
-            <span>🔀 Randomize Answers</span>
-          </label>
-          <label class="option-select-label">
-            <span>⏱️ Question Time:</span>
-            <select id="selectTimeLimit" class="time-limit-select">
-              <option value="5">5 Seconds ⚡</option>
-              <option value="10">10 Seconds 🚀</option>
-              <option value="15">15 Seconds</option>
-              <option value="20" selected>20 Seconds (Default) ⏱️</option>
-              <option value="30">30 Seconds</option>
-              <option value="45">45 Seconds</option>
-              <option value="60">60 Seconds (1 Min)</option>
-              <option value="90">90 Seconds</option>
-              <option value="120">120 Seconds (2 Min)</option>
-              <option value="xml">Original XML Time Limits</option>
-            </select>
-          </label>
-        </div>
-
-        <!-- Main Action Buttons -->
-        <div class="studio-actions-row">
-          <button class="btn btn-primary btn-lg" id="btnLaunchHost" disabled style="flex: 2; font-size: 1.25rem;">
-            🚀 Host Quiz &amp; Launch Room
-          </button>
-          <button class="btn btn-secondary btn-lg" id="btnPreviewQuiz" disabled style="flex: 1;">
-            👁️ Preview Questions
+          <button class="btn btn-primary btn-lg" id="btnNextPin" style="width: 100%; font-size: 1.3rem; padding: 0.9rem; font-weight: 800;">
+            Enter ➔
           </button>
         </div>
 
-        <!-- Player Quick Join Strip -->
-        <div class="player-quick-join-strip">
-          <span class="strip-label">🎮 Joining a game as a player?</span>
-          <div class="strip-form">
-            <input type="number" id="quickPinInput" class="strip-input" placeholder="6-Digit PIN" maxlength="6">
-            <button class="btn btn-success" id="btnQuickJoinGo">Join Game ➔</button>
+        <!-- STEP 2: Choose Avatar & Nickname -->
+        <div id="joinStepNick" style="display: none;">
+          <p style="color: var(--text-secondary); font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">
+            Pick an Avatar &amp; Nickname:
+          </p>
+          
+          <div class="avatar-picker" id="avatarPicker" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; margin-bottom: 1.4rem;">
+            <button class="avatar-opt selected" type="button" data-avatar="🐱">🐱</button>
+            <button class="avatar-opt" type="button" data-avatar="🐶">🐶</button>
+            <button class="avatar-opt" type="button" data-avatar="🦊">🦊</button>
+            <button class="avatar-opt" type="button" data-avatar="🐼">🐼</button>
+            <button class="avatar-opt" type="button" data-avatar="🦁">🦁</button>
+            <button class="avatar-opt" type="button" data-avatar="🐯">🐯</button>
+            <button class="avatar-opt" type="button" data-avatar="🦄">🦄</button>
+            <button class="avatar-opt" type="button" data-avatar="🐸">🐸</button>
+            <button class="avatar-opt" type="button" data-avatar="🐙">🐙</button>
+            <button class="avatar-opt" type="button" data-avatar="🚀">🚀</button>
+            <button class="avatar-opt" type="button" data-avatar="⚡">⚡</button>
+            <button class="avatar-opt" type="button" data-avatar="🌟">🌟</button>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- ==================== 8. HOST LOBBY VIEW ==================== -->
-    <section id="hostLobbyView" class="view-section">
-      <div class="lobby-header">
-        <div class="pin-display">
-          <span class="pin-label">Join at <span id="hostJoinUrlText">http://localhost:3000</span> with PIN:</span>
-          <span class="pin-code" id="hostPinDisplay">123 456</span>
-        </div>
-
-        <div class="qr-box">
-          <div id="qrcodeCanvas"></div>
-          <div class="qr-text">Scan with<br>Mobile Camera<br>to Join</div>
-        </div>
-      </div>
-
-      <div class="player-list-header">
-        <h2 style="font-size: 1.8rem; font-weight: 800;">Waiting for Players...</h2>
-        <div class="player-count-badge" id="hostPlayerCountBadge">👥 0 Players</div>
-      </div>
-
-      <div class="player-grid" id="hostPlayerGrid">
-        <!-- Player chips injected dynamically -->
-      </div>
-
-      <div style="margin-top: 2rem; width: 100%; display: flex; justify-content: center;">
-        <button class="btn btn-success btn-lg" id="btnStartGame" style="min-width: 250px;">Start Game 🚀</button>
-      </div>
-    </section>
-
-    <!-- ==================== 9. HOST QUESTION VIEW ==================== -->
-    <section id="hostQuestionView" class="view-section">
-      <div class="question-container">
-        <div class="question-top-bar">
-          <div class="question-counter" id="hostQCounter">Question 1 / 5</div>
-          <div class="timer-circle" id="hostTimerDisplay">20</div>
-          <div class="player-count-badge" id="hostAnswerCountBadge">Answers: 0/0</div>
-        </div>
-
-        <div class="question-box">
-          <h2 class="question-text" id="hostQText">Question text appears here...</h2>
-        </div>
-
-        <!-- Host Question Image Container -->
-        <div class="question-img-box" id="hostQImgBox" style="display: none;">
-          <img id="hostQImage" class="question-img" src="" alt="Question image">
-        </div>
-
-        <div class="options-grid" id="hostOptionsGrid">
-          <!-- 4 option cards injected dynamically -->
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-          <button class="btn btn-secondary" id="btnEndTimerEarly">Skip to Results ⏩</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 10. HOST RESULTS CHART & SCOREBOARD VIEW ==================== -->
-    <section id="hostResultsView" class="view-section">
-      <div class="results-chart-container">
-        <!-- Question Details Banner for Review & Analysis -->
-        <div id="hostResultsQuestionHeader" style="background: rgba(15, 23, 42, 0.03); border: 1px solid var(--surface-glass-border); border-radius: var(--radius-md); padding: 1.2rem; text-align: center;">
-          <div id="hostResultsQCounter" style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Question 1 / 6</div>
-          <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-top: 0.3rem;" id="hostResultsFullQText">Question text appears here...</h2>
-          <!-- Question Image if present -->
-          <div class="question-img-box" id="hostResultsQImgBox" style="display: none; max-height: 140px; margin-top: 0.6rem;">
-            <img id="hostResultsQImage" class="question-img" style="max-height: 140px;" src="" alt="Question image">
+          <div style="margin-bottom: 1.4rem;">
+            <input type="text" 
+                   id="inputNickname" 
+                   class="form-input" 
+                   placeholder="Your Nickname" 
+                   maxlength="15" 
+                   autocomplete="off"
+                   style="text-align: center; font-size: 1.4rem; font-weight: 800; padding: 0.75rem; border: 3px solid #cbd5e1; border-radius: var(--radius-md);">
           </div>
+
+          <button class="btn btn-success btn-lg" id="btnSubmitJoin" style="width: 100%; font-size: 1.3rem; padding: 0.9rem; font-weight: 800;">
+            OK, Go! 🚀
+          </button>
         </div>
 
-        <h3 style="font-size: 1.2rem; font-weight: 800; text-align: center; color: var(--text-secondary); margin-top: 0.5rem;" id="hostResultsQText">Answer Distribution</h3>
+      </div>
+    </section>
+
+    <!-- ==================== 2. PLAYER LOBBY VIEW ==================== -->
+    <section id="playerLobbyView" class="view-section" style="width: 100%; max-width: 440px;">
+      <div class="card" style="text-align: center; padding: 2.8rem 2rem;">
+        <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">You're in! 🎉</h2>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; font-weight: 600; margin-bottom: 2rem;">
+          See your nickname on the screen?
+        </p>
+
+        <div style="margin: 1.5rem 0;">
+          <div id="playerLobbyAvatar" style="font-size: 5rem; animation: floatBounce 2.5s ease-in-out infinite;">🐱</div>
+          <div id="playerLobbyName" style="font-size: 2rem; font-weight: 900; margin-top: 0.6rem; color: #0284c7;">Player</div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-top: 2rem; color: var(--text-muted); font-size: 0.95rem; font-weight: 700;">
+          <span class="spinner-dot" style="display: inline-block; width: 10px; height: 10px; background: #0284c7; border-radius: 50%; animation: pulse 1s infinite alternate;"></span>
+          Waiting for host to start the game...
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PLAYER QUESTION VIEW ==================== -->
+    <section id="playerQuestionView" class="view-section" style="width: 100%; max-width: 600px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem;">
+        <span id="playerQNumber" style="font-size: 1.1rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 0.3rem 0.8rem; border-radius: var(--radius-full);">Question 1 / 5</span>
+        <span style="font-weight: 700; color: var(--text-muted);">Choose Fast! ⚡</span>
+      </div>
+
+      <!-- Optional Question Image for Player -->
+      <div class="question-img-box" id="playerQImgBox" style="display: none; margin-bottom: 1rem; text-align: center;">
+        <img id="playerQImage" class="question-img" style="max-height: 160px; border-radius: 12px; box-shadow: var(--shadow-sm);" src="" alt="Question image">
+      </div>
+
+      <!-- Giant 4 or 2 Choice Pad -->
+      <div class="player-pad" id="playerPad">
+        <!-- Buttons injected dynamically -->
+      </div>
+    </section>
+
+    <!-- ==================== 4. PLAYER SUBMITTED VIEW ==================== -->
+    <section id="playerSubmittedView" class="view-section" style="width: 100%; max-width: 440px;">
+      <div class="card" style="text-align: center; padding: 3rem 2rem;">
+        <div style="font-size: 4.5rem; margin-bottom: 1rem; animation: pulse 1.2s infinite alternate;">⏳</div>
+        <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">Answer Submitted!</h2>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; font-weight: 600;">
+          Waiting for other players or time to run out...
+        </p>
+      </div>
+    </section>
+
+    <!-- ==================== 5. PLAYER RESULT VIEW ==================== -->
+    <section id="playerResultView" class="view-section" style="width: 100%; max-width: 440px;">
+      <div class="outcome-card correct" id="outcomeCard" style="text-align: center; padding: 2.5rem 1.8rem; border-radius: var(--radius-lg);">
+        <div class="outcome-icon" id="outcomeIcon" style="font-size: 4.5rem; margin-bottom: 0.5rem;">🎉</div>
+        <h2 class="outcome-title" id="outcomeTitle" style="font-size: 2.2rem; font-weight: 900; margin-bottom: 0.3rem;">Correct!</h2>
+        <div class="outcome-points" id="outcomePoints" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">+850 pts</div>
+        <div class="outcome-streak" id="outcomeStreak" style="font-size: 1.1rem; font-weight: 800; color: #ea580c; display: none;">🔥 Streak: 2 in a row!</div>
         
-        <div class="chart-bars" id="chartBarsGrid">
-          <!-- 4 animated vertical bar columns -->
+        <div id="playerRankDisplay" style="font-size: 1.1rem; font-weight: 800; margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(0,0,0,0.06); border-radius: var(--radius-full); display: inline-block;">
+          Rank #1
         </div>
 
-        <!-- Integrated Leaderboard Section -->
-        <div style="margin-top: 1.2rem; width: 100%;">
-          <h3 style="font-size: 1.3rem; font-weight: 800; text-align: center; margin-bottom: 0.8rem; color: #0284c7;">Leaderboard 🏆</h3>
-          <div class="leaderboard-list" id="resultsLeaderboardRows" style="margin: 0 auto;">
-            <!-- Top player rows -->
+        <!-- Question & Correct Answer Breakdown -->
+        <div id="playerResultQuestionBox" style="margin-top: 1.5rem; background: #ffffff; border-radius: var(--radius-md); padding: 1rem; text-align: left; display: none;">
+          <div id="playerResultQNumber" style="font-size: 0.8rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Question 1</div>
+          <div id="playerResultQText" style="font-weight: 800; font-size: 1rem; color: #0f172a; margin-top: 0.2rem;">What was the question?</div>
+          <div style="margin-top: 0.6rem; font-size: 0.85rem; color: #16a34a; font-weight: 700;">
+            ✓ Correct Answer: <span id="playerResultCorrectText" style="color: #0f172a; font-weight: 800;">Option</span>
           </div>
-        </div>
-
-        <div style="display: flex; justify-content: center; margin-top: 1.5rem;">
-          <button class="btn btn-success btn-lg" id="btnNextQuestion" style="min-width: 260px;">Next Question ⏩</button>
         </div>
       </div>
     </section>
 
-    <!-- ==================== 11. HOST LEADERBOARD VIEW ==================== -->
-    <section id="hostLeaderboardView" class="view-section">
-      <div style="text-align: center; width: 100%;">
-        <h2 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem;">Scoreboard 🏆</h2>
-        
-        <div class="leaderboard-list" id="leaderboardRows">
-          <!-- Top 5 player rows -->
-        </div>
-
-        <div style="margin-top: 1.5rem;">
-          <button class="btn btn-primary btn-lg" id="btnNextQuestion">Next Question ⏩</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 12. FINAL PODIUM VIEW ==================== -->
-    <section id="hostPodiumView" class="view-section">
-      <div style="text-align: center; width: 100%;">
-        <h1 style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fde047, #ca8a04); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Winner Podium 🎉</h1>
-        
-        <div class="podium-container">
-          <!-- 2nd Place -->
-          <div class="podium-step second">
-            <div class="podium-player" id="podium2nd">
-              <div style="font-size: 2rem;">🥈</div>
-              <div style="font-weight: 800; font-size: 1.2rem;">Player 2</div>
-              <div style="color: #38bdf8; font-weight: 700;">0 pts</div>
-            </div>
-            <div class="podium-block">2</div>
-          </div>
-
-          <!-- 1st Place -->
-          <div class="podium-step first">
-            <div class="podium-player" id="podium1st">
-              <div style="font-size: 2.8rem;">👑</div>
-              <div style="font-weight: 900; font-size: 1.4rem;">Winner</div>
-              <div style="color: #fde047; font-weight: 800;">0 pts</div>
-            </div>
-            <div class="podium-block">1</div>
-          </div>
-
-          <!-- 3rd Place -->
-          <div class="podium-step third">
-            <div class="podium-player" id="podium3rd">
-              <div style="font-size: 2rem;">🥉</div>
-              <div style="font-weight: 800; font-size: 1.2rem;">Player 3</div>
-              <div style="color: #38bdf8; font-weight: 700;">0 pts</div>
-            </div>
-            <div class="podium-block">3</div>
-          </div>
-        </div>
-
-        <!-- Full Player Standings & Accuracy Breakdown Table -->
-        <div style="margin-top: 2.5rem; width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; text-align: left;">
-          <h2 style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; text-align: center;">Full Final Standings &amp; Results 📊</h2>
-          <div class="leaderboard-list" id="fullPodiumStandingsList" style="margin: 0 auto;">
-            <!-- All player summary rows injected dynamically -->
-          </div>
-        </div>
-
-        <div style="margin-top: 2.5rem;">
-          <button class="btn btn-secondary btn-lg" id="btnPlayAgain">Play Again 🔄</button>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- Quiz Inspector & Visual Previewer Modal -->
-    <div id="xmlReviewModal" class="modal-overlay" style="display: none;">
-      <div class="card modal-content" style="max-width: 760px; width: 92%; text-align: left; padding: 1.8rem; position: relative;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-          <h2 class="card-title" style="margin: 0; font-size: 1.5rem;" id="quizReviewHeaderTitle">🔍 Quiz Inspector & Previewer</h2>
-          <button id="btnCloseXmlReviewModal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
-        </div>
-        
-        <!-- Tab Controls -->
-        <div class="preview-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
-          <button class="preview-tab-btn active" id="tabBtnVisual">🎴 Visual Question Cards</button>
-          <button class="preview-tab-btn" id="tabBtnXml">📄 Raw XML Code</button>
-        </div>
-
-        <!-- Tab 1: Visual Questions Preview Container -->
-        <div id="tabVisualContent" style="display: block;">
-          <div id="visualQuestionsList" class="visual-questions-list">
-            <div style="color: var(--text-secondary); text-align: center; padding: 1rem;">Select a quiz or upload an XML file to view question cards.</div>
-          </div>
-        </div>
-
-        <!-- Tab 2: Raw XML Code Container -->
-        <div id="tabXmlContent" style="display: none;">
-          <div id="xmlReviewCodeBox" class="xml-code-box">Loading XML content...</div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.2rem;">
-          <button class="btn btn-sm btn-secondary" id="btnCopyXmlText" style="display: none;">📋 Copy XML</button>
-          <button class="btn btn-sm btn-primary" id="btnCloseXmlReviewBtn">Close Preview</button>
-        </div>
-      </div>
-    </div>
   </main>
 
   <footer class="app-footer">
     Takoot &copy; 2026 - Ultra-lightweight Real-Time Quiz System
   </footer>
 
-  <!-- Application Logic JavaScript -->
-  <script src="js/app.js"></script>
+  <!-- Player Application Script -->
+  <script src="/js/player.js"></script>
 </body>
 </html>

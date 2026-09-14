@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Takoot - Hidden Quiz Builder</title>
+  <meta name="description" content="Visually create quizzes, add pictures, and export XML or ZIP packages for Takoot.">
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- JSZip for ZIP packaging and unpacking -->
+  <script src="/js/jszip.min.js"></script>
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="brand-logo" id="logoHomeBtn" style="cursor: pointer;">
+      ⚡ Takoot <span class="badge" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff;">Quiz Builder</span>
+    </div>
+    <div class="header-controls" style="display: flex; gap: 0.8rem; align-items: center;">
+      <a href="/host" class="btn btn-sm btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">📺 Host Studio</a>
+      <a href="/" class="btn btn-sm btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">🎮 Player Join</a>
+    </div>
+  </header>
+
+  <!-- Builder Main Layout -->
+  <div class="builder-layout">
+
+    <!-- Builder Top Action Bar -->
+    <div class="builder-topbar">
+      <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+        <label class="btn btn-sm btn-secondary file-label" title="Import existing XML or ZIP quiz">
+          <input type="file" id="builderImportInput" accept=".xml,.zip" style="display: none;">
+          📁 Import (.xml / .zip)
+        </label>
+        <button class="btn btn-sm btn-secondary" id="btnNewQuiz" title="Start a fresh quiz">📄 New Quiz</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-primary" id="btnDownloadZip" title="Download ZIP package with all attached images">
+          📦 Download .ZIP (with Images)
+        </button>
+        <button class="btn btn-sm btn-secondary" id="btnExportXml" title="Export XML code">
+          📄 Export .XML
+        </button>
+        <button class="btn btn-sm btn-success" id="btnHostNow" title="Immediately open and host this quiz in Host Studio">
+          🚀 Host Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Title & Metadata Card -->
+    <div class="builder-meta-card">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <div style="flex: 2; min-width: 260px;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">QUIZ TITLE</label>
+          <input type="text" id="quizTitleInput" class="form-input" placeholder="e.g. Space &amp; Astronomy Trivia" value="My Awesome Quiz" style="font-weight: 800; font-size: 1.2rem;">
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">DEFAULT TIME LIMIT</label>
+          <select id="quizDefaultTime" class="form-input" style="font-weight: 700;">
+            <option value="10">10 Seconds ⚡</option>
+            <option value="15">15 Seconds</option>
+            <option value="20" selected>20 Seconds (Standard)</option>
+            <option value="30">30 Seconds</option>
+            <option value="60">60 Seconds</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Container -->
+    <div id="questionsContainer">
+      <!-- Dynamic Question Cards injected here -->
+    </div>
+
+    <!-- Bottom Add Question Buttons -->
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
+      <button class="btn btn-primary btn-lg" id="btnAddMCQuestion" style="min-width: 260px;">
+        ➕ Add Multiple Choice Question
+      </button>
+      <button class="btn btn-secondary btn-lg" id="btnAddTFQuestion" style="min-width: 220px;">
+        ⚖️ Add True / False Question
+      </button>
+    </div>
+
+  </div>
+
+  <!-- XML Preview Modal -->
+  <div id="xmlExportModal" class="modal-overlay" style="display: none;">
+    <div class="card modal-content" style="max-width: 760px; width: 92%; text-align: left; padding: 1.8rem; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+        <h2 class="card-title" style="margin: 0; font-size: 1.5rem;">📄 Generated XML Code</h2>
+        <button id="btnCloseXmlModal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+      <div id="xmlExportCodeBox" class="xml-code-box" style="max-height: 400px; overflow-y: auto; white-space: pre; font-family: monospace; background: #0f172a; color: #f8fafc; padding: 1rem; border-radius: 8px;"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.2rem;">
+        <button class="btn btn-sm btn-secondary" id="btnCopyExportXml">📋 Copy to Clipboard</button>
+        <button class="btn btn-sm btn-primary" id="btnDownloadXmlFile">💾 Save .xml File</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    Takoot &copy; 2026 - Hidden Quiz Builder
+  </footer>
+
+  <!-- Builder Application Logic -->
+  <script src="/js/builder.js"></script>
+</body>
+</html>
