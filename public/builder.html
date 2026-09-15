@@ -13,7 +13,7 @@
 
   <!-- Top App Header -->
   <header class="app-header">
-    <div class="brand-logo" id="logoHomeBtn" style="cursor: pointer;">
+    <div class="brand-logo" id="logoHomeBtn" style="cursor: pointer;" onclick="window.location.href='/builder'">
       ⚡ Takoot <span class="badge" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff;">Quiz Builder</span>
     </div>
     <div class="header-controls" style="display: flex; gap: 0.8rem; align-items: center;">
@@ -29,20 +29,20 @@
     <div class="builder-topbar">
       <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
         <label class="btn btn-sm btn-secondary file-label" title="Import existing XML or ZIP quiz">
-          <input type="file" id="builderImportInput" accept=".xml,.zip" style="display: none;">
+          <input type="file" id="builderImportInput" accept=".xml,.zip" style="display: none;" onchange="window.TakootBuilder.handleImport(this.files)">
           📁 Import (.xml / .zip)
         </label>
-        <button class="btn btn-sm btn-secondary" id="btnNewQuiz" title="Start a fresh quiz">📄 New Quiz</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="btnNewQuiz" title="Start a fresh quiz" onclick="window.TakootBuilder.newQuiz()">📄 New Quiz</button>
       </div>
 
       <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-        <button class="btn btn-sm btn-primary" id="btnDownloadZip" title="Download ZIP package with all attached images">
+        <button type="button" class="btn btn-sm btn-primary" id="btnDownloadZip" title="Download ZIP package with all attached images" onclick="window.TakootBuilder.downloadZip()">
           📦 Download .ZIP (with Images)
         </button>
-        <button class="btn btn-sm btn-secondary" id="btnExportXml" title="Export XML code">
+        <button type="button" class="btn btn-sm btn-secondary" id="btnExportXml" title="Export XML code" onclick="window.TakootBuilder.exportXml()">
           📄 Export .XML
         </button>
-        <button class="btn btn-sm btn-success" id="btnHostNow" title="Immediately open and host this quiz in Host Studio">
+        <button type="button" class="btn btn-sm btn-success" id="btnHostNow" title="Immediately open and host this quiz in Host Studio" onclick="window.TakootBuilder.hostNow()">
           🚀 Host Now
         </button>
       </div>
@@ -50,10 +50,10 @@
 
     <!-- Mode Switcher Tabs -->
     <div class="builder-mode-switcher">
-      <button class="builder-mode-btn active" id="btnModeVisual">
+      <button type="button" class="builder-mode-btn active" id="btnModeVisual" onclick="window.TakootBuilder.switchMode('visual')">
         <span>🎴 Mode 1: Visual Form Builder</span>
       </button>
-      <button class="builder-mode-btn" id="btnModeXmlImages">
+      <button type="button" class="builder-mode-btn" id="btnModeXmlImages" onclick="window.TakootBuilder.switchMode('xml_images')">
         <span>📋 Mode 2: XML &amp; Paste-Image Studio</span>
       </button>
     </div>
@@ -87,10 +87,10 @@
 
       <!-- Bottom Add Question Buttons -->
       <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
-        <button class="btn btn-primary btn-lg" id="btnAddMCQuestion" style="min-width: 260px;">
+        <button type="button" class="btn btn-primary btn-lg" id="btnAddMCQuestion" style="min-width: 260px;" onclick="window.TakootBuilder.addMC()">
           ➕ Add Multiple Choice Question
         </button>
-        <button class="btn btn-secondary btn-lg" id="btnAddTFQuestion" style="min-width: 220px;">
+        <button type="button" class="btn btn-secondary btn-lg" id="btnAddTFQuestion" style="min-width: 220px;" onclick="window.TakootBuilder.addTF()">
           ⚖️ Add True / False Question
         </button>
       </div>
@@ -107,8 +107,8 @@
             <p style="font-size: 0.85rem; color: var(--text-secondary);">Enter your XML below. Questions will automatically appear in the Image Attacher below.</p>
           </div>
           <div style="display: flex; gap: 0.4rem;">
-            <button class="btn btn-sm btn-secondary" id="btnXmlModeInsertTemplate">📄 Insert Template</button>
-            <button class="btn btn-sm btn-secondary" id="btnXmlModeClear">🧹 Clear</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnXmlModeInsertTemplate" onclick="window.TakootBuilder.xmlInsertTemplate()">📄 Insert Template</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnXmlModeClear" onclick="window.TakootBuilder.xmlClear()">🧹 Clear</button>
           </div>
         </div>
 
@@ -139,15 +139,15 @@
           </div>
           <div style="display: flex; gap: 0.4rem;">
             <label class="btn btn-sm btn-secondary file-label">
-              <input type="file" id="mediaPoolFileInput" multiple accept="image/*" style="display: none;">
+              <input type="file" id="mediaPoolFileInput" multiple accept="image/*" style="display: none;" onchange="window.TakootBuilder.handleMediaPoolFiles(this.files)">
               📁 Browse Pictures
             </label>
-            <button class="btn btn-sm btn-secondary" id="btnClearMediaPool" style="color: #ef4444;">🗑️ Clear Pool</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnClearMediaPool" style="color: #ef4444;" onclick="window.TakootBuilder.clearMediaPool()">🗑️ Clear Pool</button>
           </div>
         </div>
 
         <!-- Global Clipboard Paste Dropzone -->
-        <div class="paste-drop-zone" id="globalPasteZone">
+        <div class="paste-drop-zone" id="globalPasteZone" onclick="document.getElementById('mediaPoolFileInput').click()">
           <div style="font-size: 2.5rem; margin-bottom: 0.4rem;">📋</div>
           <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">
             Click here &amp; press <span style="color: var(--color-accent);">Ctrl + V</span> to paste copied image
@@ -192,12 +192,12 @@
     <div class="card modal-content" style="max-width: 760px; width: 92%; text-align: left; padding: 1.8rem; position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
         <h2 class="card-title" style="margin: 0; font-size: 1.5rem;">📄 Generated XML Code</h2>
-        <button id="btnCloseXmlModal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+        <button type="button" id="btnCloseXmlModal" style="background: none; border: none; color: var(--text-secondary); font-size: 1.8rem; cursor: pointer; line-height: 1;" onclick="window.TakootBuilder.closeModal()">&times;</button>
       </div>
       <div id="xmlExportCodeBox" class="xml-code-box" style="max-height: 400px; overflow-y: auto; white-space: pre; font-family: monospace; background: #0f172a; color: #f8fafc; padding: 1rem; border-radius: 8px;"></div>
       <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.2rem;">
-        <button class="btn btn-sm btn-secondary" id="btnCopyExportXml">📋 Copy to Clipboard</button>
-        <button class="btn btn-sm btn-primary" id="btnDownloadXmlFile">💾 Save .xml File</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="btnCopyExportXml" onclick="window.TakootBuilder.copyXml()">📋 Copy to Clipboard</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btnDownloadXmlFile" onclick="window.TakootBuilder.downloadXml()">💾 Save .xml File</button>
       </div>
     </div>
   </div>

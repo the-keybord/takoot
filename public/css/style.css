@@ -1307,12 +1307,21 @@ body::before {
   border-radius: var(--radius-md);
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
-  position: sticky;
-  top: 75px;
-  z-index: 90;
+  position: relative;
+  z-index: 10;
   box-shadow: var(--shadow-md);
   flex-wrap: wrap;
   gap: 0.8rem;
+}
+
+button, .btn, .builder-mode-btn, .btn-correct-toggle, .file-label {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+input, textarea, select {
+  user-select: text !important;
+  pointer-events: auto !important;
 }
 
 .builder-meta-card {

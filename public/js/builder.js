@@ -12,11 +12,11 @@
   let questions = [];
   let mediaPool = []; // Array of { id, filename, dataUrl }
 
-  // Starter Questions
+  // Default Starter Questions
   function createDefaultQuestions() {
     return [
       {
-        id: 'q_' + Math.random().toString(36).substr(2, 9),
+        id: 'q_' + Math.random().toString(36).substring(2, 9),
         type: 'MC',
         text: 'What is the closest planet to the Sun?',
         timeLimit: 20,
@@ -29,7 +29,7 @@
         ]
       },
       {
-        id: 'q_' + Math.random().toString(36).substr(2, 9),
+        id: 'q_' + Math.random().toString(36).substring(2, 9),
         type: 'TF',
         text: 'Sound travels faster in water than in air.',
         timeLimit: 15,
@@ -91,7 +91,7 @@
           <span style="font-weight: 700; color: var(--text-secondary); font-size: 0.9rem;">
             ${q.type === 'TF' ? '⚖️ True / False' : '🎴 Multiple Choice'}
           </span>
-          <select class="form-input q-timelimit-select" style="padding: 0.25rem 0.5rem; font-size: 0.85rem; font-weight: 700;">
+          <select class="form-input" style="padding: 0.25rem 0.5rem; font-size: 0.85rem; font-weight: 700;" onchange="window.TakootBuilder.updateTimeLimit(${qIndex}, this.value)">
             <option value="5" ${q.timeLimit === 5 ? 'selected' : ''}>5s ⚡</option>
             <option value="10" ${q.timeLimit === 10 ? 'selected' : ''}>10s</option>
             <option value="15" ${q.timeLimit === 15 ? 'selected' : ''}>15s</option>
@@ -102,10 +102,10 @@
           </select>
         </div>
         <div class="builder-q-tools">
-          <button class="btn btn-sm btn-secondary btn-q-up" title="Move Up" ${qIndex === 0 ? 'disabled' : ''}>⬆️</button>
-          <button class="btn btn-sm btn-secondary btn-q-down" title="Move Down" ${qIndex === questions.length - 1 ? 'disabled' : ''}>⬇️</button>
-          <button class="btn btn-sm btn-secondary btn-q-duplicate" title="Duplicate Question">📋</button>
-          <button class="btn btn-sm btn-secondary btn-q-delete" title="Delete Question" style="color: #ef4444;" ${questions.length <= 1 ? 'disabled' : ''}>🗑️</button>
+          <button type="button" class="btn btn-sm btn-secondary" title="Move Up" ${qIndex === 0 ? 'disabled' : ''} onclick="window.TakootBuilder.moveUp(${qIndex})">⬆️</button>
+          <button type="button" class="btn btn-sm btn-secondary" title="Move Down" ${qIndex === questions.length - 1 ? 'disabled' : ''} onclick="window.TakootBuilder.moveDown(${qIndex})">⬇️</button>
+          <button type="button" class="btn btn-sm btn-secondary" title="Duplicate Question" onclick="window.TakootBuilder.duplicate(${qIndex})">📋</button>
+          <button type="button" class="btn btn-sm btn-secondary" title="Delete Question" style="color: #ef4444;" ${questions.length <= 1 ? 'disabled' : ''} onclick="window.TakootBuilder.deleteQuestion(${qIndex})">🗑️</button>
         </div>
       `;
 
@@ -114,7 +114,7 @@
       textGroup.style.marginBottom = '0.8rem';
       textGroup.innerHTML = `
         <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.3rem;">QUESTION TEXT</label>
-        <textarea class="form-input q-text-input" rows="2" placeholder="Write your question here..." style="font-size: 1.15rem; font-weight: 700; width: 100%;">${escapeHtml(q.text)}</textarea>
+        <textarea class="form-input q-text-input" rows="2" placeholder="Write your question here..." style="font-size: 1.15rem; font-weight: 700; width: 100%;" oninput="window.TakootBuilder.updateQuestionText(${qIndex}, this.value)">${escapeHtml(q.text)}</textarea>
       `;
 
       // Image Attachment Box
@@ -124,16 +124,36 @@
         imgBox.innerHTML = `
           <img src="${q.image.dataUrl}" class="builder-img-preview" alt="question image">
           <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.3rem;">${escapeHtml(q.image.filename || 'Attached Image')}</div>
-          <button type="button" class="btn btn-sm btn-secondary btn-remove-img" style="margin-top: 0.5rem; color: #ef4444;">🗑️ Remove Picture</button>
+          <button type="button" class="btn btn-sm btn-secondary" style="margin-top: 0.5rem; color: #ef4444;" onclick="event.stopPropagation(); window.TakootBuilder.removeImage(${qIndex})">🗑️ Remove Picture</button>
         `;
       } else {
         imgBox.innerHTML = `
           <div style="font-size: 2rem; margin-bottom: 0.2rem;">🖼️</div>
-          <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.95rem;">Click, Drag &amp; Drop, or Paste (<kbd style="background: #e2e8f0; padding: 2px 5px; border-radius: 4px;">Ctrl+V</kbd>) Picture</div>
+          <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.95rem;">Click to Browse or Paste (<kbd style="background: #e2e8f0; padding: 2px 5px; border-radius: 4px;">Ctrl+V</kbd>) Picture</div>
           <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Supports PNG, JPG, WebP, GIF</div>
-          <input type="file" class="q-img-file-input" accept="image/*" style="display: none;">
+          <input type="file" class="q-img-file-input" accept="image/*" style="display: none;" onchange="if(this.files.length) window.TakootBuilder.handleQuestionFile(this.files[0], ${qIndex})">
         `;
+        imgBox.onclick = () => {
+          const fi = imgBox.querySelector('.q-img-file-input');
+          if (fi) fi.click();
+        };
       }
+
+      // Drag and drop image
+      imgBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        imgBox.style.borderColor = 'var(--color-accent)';
+      });
+      imgBox.addEventListener('dragleave', () => {
+        imgBox.style.borderColor = '#cbd5e1';
+      });
+      imgBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        imgBox.style.borderColor = '#cbd5e1';
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleImageFileForQuestion(e.dataTransfer.files[0], q);
+        }
+      });
 
       // Options Grid
       const choiceGrid = document.createElement('div');
@@ -146,7 +166,7 @@
         const item = document.createElement('div');
         item.className = `builder-choice-item ${opt.isCorrect ? 'correct' : ''}`;
 
-        // True / False follows Rule #2: Fixed positioning True (Blue) Left, False (Red) Right
+        // True / False follows Rule #2: True (Blue) Left, False (Red) Right
         let pillClass = colorPills[oIndex % colorPills.length];
         let shape = shapes[oIndex % shapes.length];
         if (q.type === 'TF') {
@@ -159,130 +179,22 @@
           <input type="text" class="builder-choice-input opt-text-input" 
                  value="${escapeHtml(opt.text)}" 
                  placeholder="Option ${oIndex + 1}" 
-                 ${q.type === 'TF' ? 'readonly' : ''}>
-          <button type="button" class="btn-correct-toggle ${opt.isCorrect ? 'is-correct' : ''}" title="${opt.isCorrect ? 'Correct Answer' : 'Mark as Correct'}">
+                 ${q.type === 'TF' ? 'readonly' : ''}
+                 oninput="window.TakootBuilder.updateOptionText(${qIndex}, ${oIndex}, this.value)">
+          <button type="button" class="btn-correct-toggle ${opt.isCorrect ? 'is-correct' : ''}" 
+                  title="${opt.isCorrect ? 'Correct Answer' : 'Mark as Correct'}"
+                  onclick="window.TakootBuilder.toggleCorrect(${qIndex}, ${oIndex})">
             ${opt.isCorrect ? '✓' : '○'}
           </button>
         `;
 
-        // Correct toggle
-        const toggleBtn = item.querySelector('.btn-correct-toggle');
-        toggleBtn.addEventListener('click', () => {
-          if (q.type === 'TF') {
-            q.options.forEach((o, i) => { o.isCorrect = (i === oIndex); });
-          } else {
-            opt.isCorrect = !opt.isCorrect;
-            const anyCorrect = q.options.some(o => o.isCorrect);
-            if (!anyCorrect) opt.isCorrect = true;
-          }
-          renderAllQuestionsVisual();
-        });
-
-        // Input change
-        const optInput = item.querySelector('.opt-text-input');
-        optInput.addEventListener('input', (e) => {
-          opt.text = e.target.value;
-        });
-
         choiceGrid.appendChild(item);
       });
 
-      // Assemble card
       card.appendChild(header);
       card.appendChild(textGroup);
       card.appendChild(imgBox);
       card.appendChild(choiceGrid);
-
-      // Event Listeners for Tools
-      const timeSelect = card.querySelector('.q-timelimit-select');
-      timeSelect.addEventListener('change', (e) => {
-        q.timeLimit = parseInt(e.target.value, 10);
-      });
-
-      const qTextInput = card.querySelector('.q-text-input');
-      qTextInput.addEventListener('input', (e) => {
-        q.text = e.target.value;
-      });
-
-      const btnUp = card.querySelector('.btn-q-up');
-      if (btnUp) {
-        btnUp.addEventListener('click', () => {
-          if (qIndex > 0) {
-            const temp = questions[qIndex - 1];
-            questions[qIndex - 1] = questions[qIndex];
-            questions[qIndex] = temp;
-            renderAllQuestionsVisual();
-          }
-        });
-      }
-
-      const btnDown = card.querySelector('.btn-q-down');
-      if (btnDown) {
-        btnDown.addEventListener('click', () => {
-          if (qIndex < questions.length - 1) {
-            const temp = questions[qIndex + 1];
-            questions[qIndex + 1] = questions[qIndex];
-            questions[qIndex] = temp;
-            renderAllQuestionsVisual();
-          }
-        });
-      }
-
-      const btnDuplicate = card.querySelector('.btn-q-duplicate');
-      if (btnDuplicate) {
-        btnDuplicate.addEventListener('click', () => {
-          const clone = JSON.parse(JSON.stringify(q));
-          clone.id = 'q_' + Math.random().toString(36).substr(2, 9);
-          questions.splice(qIndex + 1, 0, clone);
-          renderAllQuestionsVisual();
-        });
-      }
-
-      const btnDelete = card.querySelector('.btn-q-delete');
-      if (btnDelete) {
-        btnDelete.addEventListener('click', () => {
-          if (questions.length > 1 && confirm(`Delete Question #${qIndex + 1}?`)) {
-            questions.splice(qIndex, 1);
-            renderAllQuestionsVisual();
-          }
-        });
-      }
-
-      // Image Upload Events
-      const fileInput = card.querySelector('.q-img-file-input');
-      const btnRemoveImg = card.querySelector('.btn-remove-img');
-
-      if (btnRemoveImg) {
-        btnRemoveImg.addEventListener('click', (e) => {
-          e.stopPropagation();
-          q.image = null;
-          renderAllQuestionsVisual();
-        });
-      }
-
-      if (fileInput) {
-        imgBox.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) handleImageFileForQuestion(file, q);
-        });
-
-        // Drag and drop image
-        imgBox.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          imgBox.style.borderColor = 'var(--color-accent)';
-        });
-        imgBox.addEventListener('dragleave', () => {
-          imgBox.style.borderColor = '#cbd5e1';
-        });
-        imgBox.addEventListener('drop', (e) => {
-          e.preventDefault();
-          imgBox.style.borderColor = '#cbd5e1';
-          if (e.dataTransfer.files.length > 0) {
-            handleImageFileForQuestion(e.dataTransfer.files[0], q);
-          }
-        });
-      }
 
       container.appendChild(card);
     });
@@ -319,7 +231,6 @@
     }
   }
 
-  // Render the Media Pool tray
   function renderMediaPoolGrid() {
     const grid = document.getElementById('mediaPoolGrid');
     const countEl = document.getElementById('mediaPoolCount');
@@ -341,7 +252,6 @@
       const item = document.createElement('div');
       item.className = 'media-item';
 
-      // Check which question currently uses this media (if any)
       const currentAssignedQIndex = questions.findIndex(q => q.image && q.image.dataUrl === media.dataUrl);
 
       let optionsHtml = `<option value="-1">-- Unassigned --</option>`;
@@ -356,51 +266,18 @@
         <div style="font-size: 0.75rem; font-weight: 700; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center;">
           ${escapeHtml(media.filename || `Pasted Image #${mIndex + 1}`)}
         </div>
-        <select class="media-item-assign-select">
+        <select class="media-item-assign-select" onchange="window.TakootBuilder.assignMediaToQuestion(${mIndex}, parseInt(this.value, 10))">
           ${optionsHtml}
         </select>
-        <button type="button" class="btn btn-sm btn-secondary btn-del-media" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; color: #ef4444; width: 100%;">
+        <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; color: #ef4444; width: 100%;" onclick="window.TakootBuilder.deleteMedia(${mIndex})">
           🗑️ Delete
         </button>
       `;
-
-      // Dropdown selection to assign
-      const selectEl = item.querySelector('.media-item-assign-select');
-      selectEl.addEventListener('change', (e) => {
-        const chosenQIdx = parseInt(e.target.value, 10);
-        // Remove from previously assigned question if needed
-        questions.forEach(q => {
-          if (q.image && q.image.dataUrl === media.dataUrl) {
-            q.image = null;
-          }
-        });
-
-        if (chosenQIdx >= 0 && questions[chosenQIdx]) {
-          questions[chosenQIdx].image = {
-            filename: media.filename,
-            dataUrl: media.dataUrl
-          };
-        }
-
-        renderMode2XmlStudio();
-      });
-
-      // Delete from media pool
-      const delBtn = item.querySelector('.btn-del-media');
-      delBtn.addEventListener('click', () => {
-        // Remove from questions if assigned
-        questions.forEach(q => {
-          if (q.image && q.image.dataUrl === media.dataUrl) q.image = null;
-        });
-        mediaPool.splice(mIndex, 1);
-        renderMode2XmlStudio();
-      });
 
       grid.appendChild(item);
     });
   }
 
-  // Render questions list with image attachment slots in Mode 2
   function renderXmlQuestionsAttachList() {
     const list = document.getElementById('xmlQuestionsAttachList');
     if (!list) return;
@@ -416,7 +293,6 @@
       row.className = `xml-attach-row ${q.image && q.image.dataUrl ? 'has-img' : ''}`;
       row.setAttribute('data-qindex', qIndex);
 
-      // Left: Info & Choices preview
       const info = document.createElement('div');
       info.className = 'xml-attach-info';
 
@@ -438,7 +314,6 @@
         ${optionsPreview}
       `;
 
-      // Right: Image Slot
       const slot = document.createElement('div');
       slot.className = 'xml-attach-slot';
 
@@ -450,55 +325,36 @@
               ${escapeHtml(q.image.filename || 'Attached image')}
             </div>
           </div>
-          <button type="button" class="btn btn-sm btn-secondary btn-detach-q-img" style="font-size: 0.75rem; color: #ef4444; width: 100%;">
+          <button type="button" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; color: #ef4444; width: 100%;" onclick="window.TakootBuilder.removeImage(${qIndex})">
             🗑️ Remove Picture
           </button>
         `;
-
-        const detachBtn = slot.querySelector('.btn-detach-q-img');
-        detachBtn.addEventListener('click', () => {
-          q.image = null;
-          renderMode2XmlStudio();
-        });
       } else {
-        // Quick assign dropdown from media pool
         let quickSelectHtml = `<option value="">-- Choose from Pool --</option>`;
         mediaPool.forEach((m, mIdx) => {
           quickSelectHtml += `<option value="${mIdx}">Image #${mIdx + 1} (${escapeHtml(m.filename)})</option>`;
         });
 
         slot.innerHTML = `
-          <div class="xml-slot-box" tabindex="0" title="Click and press Ctrl+V to paste screenshot for this question!">
+          <div class="xml-slot-box" tabindex="0" title="Click and press Ctrl+V to paste screenshot for this question!" onclick="document.getElementById('poolFileHidden_${qIndex}').click()">
             <span style="font-size: 1.5rem;">🖼️</span>
             <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-top: 0.2rem;">
-              Click &amp; Paste <kbd style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">Ctrl+V</kbd>
+              Click / Paste <kbd style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">Ctrl+V</kbd>
             </span>
+            <input type="file" id="poolFileHidden_${qIndex}" accept="image/*" style="display: none;" onchange="if(this.files.length) window.TakootBuilder.handleQuestionFile(this.files[0], ${qIndex})">
           </div>
           ${mediaPool.length > 0 ? `
-            <select class="form-input quick-pool-select" style="font-size: 0.75rem; padding: 0.25rem; width: 100%;">
+            <select class="form-input quick-pool-select" style="font-size: 0.75rem; padding: 0.25rem; width: 100%;" onchange="window.TakootBuilder.assignMediaToQuestion(parseInt(this.value, 10), ${qIndex})">
               ${quickSelectHtml}
             </select>
           ` : ''}
         `;
 
-        // Slot click focuses it for direct paste
         const slotBox = slot.querySelector('.xml-slot-box');
-        slotBox.addEventListener('paste', (e) => {
-          e.stopPropagation();
-          handlePasteEvent(e, q);
-        });
-
-        const quickSelect = slot.querySelector('.quick-pool-select');
-        if (quickSelect) {
-          quickSelect.addEventListener('change', (e) => {
-            const mIdx = parseInt(e.target.value, 10);
-            if (!isNaN(mIdx) && mediaPool[mIdx]) {
-              q.image = {
-                filename: mediaPool[mIdx].filename,
-                dataUrl: mediaPool[mIdx].dataUrl
-              };
-              renderMode2XmlStudio();
-            }
+        if (slotBox) {
+          slotBox.addEventListener('paste', (e) => {
+            e.stopPropagation();
+            handlePasteEvent(e, q);
           });
         }
       }
@@ -509,15 +365,16 @@
     });
   }
 
-  // ==================== CLIPBOARD & IMAGE PASTE HANDLER ====================
+  // ==================== CLIPBOARD & IMAGE PASTE ====================
   function handlePasteEvent(event, targetQuestion = null) {
-    const items = (event.clipboardData || window.clipboardData).items;
+    const items = (event.clipboardData || window.clipboardData)?.items;
     if (!items) return;
 
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         event.preventDefault();
         const blob = items[i].getAsFile();
+        if (!blob) continue;
         const reader = new FileReader();
 
         reader.onload = (e) => {
@@ -526,15 +383,13 @@
           const filename = `Pasted_Image_${mediaPool.length + 1}.${ext}`;
 
           const mediaObj = {
-            id: 'img_' + Math.random().toString(36).substr(2, 9),
+            id: 'img_' + Math.random().toString(36).substring(2, 9),
             filename: filename,
             dataUrl: dataUrl
           };
 
-          // Add to media pool
           mediaPool.push(mediaObj);
 
-          // If pasted directly into a target question slot:
           if (targetQuestion) {
             targetQuestion.image = {
               filename: filename,
@@ -556,7 +411,7 @@
   }
 
   function handleImageFileForQuestion(file, questionObj) {
-    if (!file.type.startsWith('image/')) {
+    if (!file || !file.type.startsWith('image/')) {
       alert('Please select a valid image file (PNG, JPG, WebP, GIF, SVG).');
       return;
     }
@@ -569,10 +424,9 @@
         dataUrl: dataUrl
       };
 
-      // Also add to media pool if not already present
       if (!mediaPool.some(m => m.dataUrl === dataUrl)) {
         mediaPool.push({
-          id: 'img_' + Math.random().toString(36).substr(2, 9),
+          id: 'img_' + Math.random().toString(36).substring(2, 9),
           filename: file.name,
           dataUrl: dataUrl
         });
@@ -625,7 +479,7 @@
 
           if (imgObj && !mediaPool.some(m => m.dataUrl === imgObj.dataUrl)) {
             mediaPool.push({
-              id: 'img_' + Math.random().toString(36).substr(2, 9),
+              id: 'img_' + Math.random().toString(36).substring(2, 9),
               filename: imgObj.filename,
               dataUrl: imgObj.dataUrl
             });
@@ -633,7 +487,7 @@
         }
 
         return {
-          id: 'q_' + Math.random().toString(36).substr(2, 9),
+          id: 'q_' + Math.random().toString(36).substring(2, 9),
           type: isTF ? 'TF' : 'MC',
           text: q.text,
           timeLimit: q.timeLimit || 20,
@@ -695,7 +549,6 @@
     const xmlContent = generateQuizXml(true);
     zip.file('quiz.xml', xmlContent);
 
-    // Images folder
     const imgFolder = zip.folder('images');
     questions.forEach((q, idx) => {
       if (q.image && q.image.dataUrl) {
@@ -770,7 +623,9 @@
   }
 
   // ==================== IMPORT (.XML / .ZIP) ====================
-  async function handleImportFile(file) {
+  async function handleImportFiles(fileList) {
+    if (!fileList || fileList.length === 0) return;
+    const file = fileList[0];
     if (file.name.toLowerCase().endsWith('.zip')) {
       await handleImportZip(file);
     } else {
@@ -816,7 +671,7 @@
 
           if (!mediaPool.some(m => m.dataUrl === dataUrl)) {
             mediaPool.push({
-              id: 'img_' + Math.random().toString(36).substr(2, 9),
+              id: 'img_' + Math.random().toString(36).substring(2, 9),
               filename: baseName,
               dataUrl: dataUrl
             });
@@ -855,129 +710,213 @@
     });
   }
 
-  // ==================== EVENT LISTENERS & SETUP ====================
-  function setupBuilderEvents() {
-    // Mode Switcher Tabs
-    const btnVisual = document.getElementById('btnModeVisual');
-    const btnXml = document.getElementById('btnModeXmlImages');
-    if (btnVisual) btnVisual.addEventListener('click', () => switchMode('visual'));
-    if (btnXml) btnXml.addEventListener('click', () => switchMode('xml_images'));
-
-    // Top action buttons
-    const btnAddMC = document.getElementById('btnAddMCQuestion');
-    const btnAddTF = document.getElementById('btnAddTFQuestion');
-    const btnNew = document.getElementById('btnNewQuiz');
-    const btnZip = document.getElementById('btnDownloadZip');
-    const btnXml = document.getElementById('btnExportXml');
-    const btnHost = document.getElementById('btnHostNow');
-    const importInput = document.getElementById('builderImportInput');
-    const btnCloseModal = document.getElementById('btnCloseXmlModal');
-    const btnCopyXml = document.getElementById('btnCopyExportXml');
-    const btnDownloadXml = document.getElementById('btnDownloadXmlFile');
-    const defaultTimeSelect = document.getElementById('quizDefaultTime');
-
-    if (btnAddMC) {
-      btnAddMC.addEventListener('click', () => {
-        const defaultTime = defaultTimeSelect ? parseInt(defaultTimeSelect.value, 10) : 20;
-        questions.push({
-          id: 'q_' + Math.random().toString(36).substr(2, 9),
-          type: 'MC',
-          text: '',
-          timeLimit: defaultTime,
-          image: null,
-          options: [
-            { text: '', isCorrect: true },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false }
-          ]
-        });
-        renderAllQuestionsVisual();
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  // ==================== EXPOSE GLOBAL API ====================
+  window.TakootBuilder = {
+    switchMode: (mode) => switchMode(mode),
+    
+    addMC: () => {
+      const defaultTimeSelect = document.getElementById('quizDefaultTime');
+      const defaultTime = defaultTimeSelect ? parseInt(defaultTimeSelect.value, 10) : 20;
+      questions.push({
+        id: 'q_' + Math.random().toString(36).substring(2, 9),
+        type: 'MC',
+        text: '',
+        timeLimit: defaultTime,
+        image: null,
+        options: [
+          { text: '', isCorrect: true },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false }
+        ]
       });
-    }
+      renderAllQuestionsVisual();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    },
 
-    if (btnAddTF) {
-      btnAddTF.addEventListener('click', () => {
-        const defaultTime = defaultTimeSelect ? parseInt(defaultTimeSelect.value, 10) : 15;
-        questions.push({
-          id: 'q_' + Math.random().toString(36).substr(2, 9),
-          type: 'TF',
-          text: '',
-          timeLimit: defaultTime,
-          image: null,
-          options: [
-            { text: 'True', isCorrect: true },
-            { text: 'False', isCorrect: false }
-          ]
-        });
-        renderAllQuestionsVisual();
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    addTF: () => {
+      const defaultTimeSelect = document.getElementById('quizDefaultTime');
+      const defaultTime = defaultTimeSelect ? parseInt(defaultTimeSelect.value, 10) : 15;
+      questions.push({
+        id: 'q_' + Math.random().toString(36).substring(2, 9),
+        type: 'TF',
+        text: '',
+        timeLimit: defaultTime,
+        image: null,
+        options: [
+          { text: 'True', isCorrect: true },
+          { text: 'False', isCorrect: false }
+        ]
       });
-    }
+      renderAllQuestionsVisual();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    },
 
-    if (btnNew) {
-      btnNew.addEventListener('click', () => {
-        if (confirm('Start a new blank quiz? Current changes will be reset.')) {
-          questions = createDefaultQuestions();
-          mediaPool = [];
-          const titleInput = document.getElementById('quizTitleInput');
-          if (titleInput) titleInput.value = 'My Awesome Quiz';
-          if (currentMode === 'visual') renderAllQuestionsVisual();
-          else renderMode2XmlStudio();
+    newQuiz: () => {
+      if (confirm('Start a new blank quiz? Current changes will be reset.')) {
+        questions = createDefaultQuestions();
+        mediaPool = [];
+        const titleInput = document.getElementById('quizTitleInput');
+        if (titleInput) titleInput.value = 'My Awesome Quiz';
+        if (currentMode === 'visual') renderAllQuestionsVisual();
+        else renderMode2XmlStudio();
+      }
+    },
+
+    downloadZip: () => exportAsZip(),
+    exportXml: () => showXmlExportModal(),
+    hostNow: () => hostQuizNow(),
+    copyXml: () => copyXmlToClipboard(),
+    downloadXml: () => downloadXmlFile(),
+    closeModal: () => {
+      const modal = document.getElementById('xmlExportModal');
+      if (modal) modal.style.display = 'none';
+    },
+
+    handleImport: (files) => handleImportFiles(files),
+
+    handleMediaPoolFiles: (files) => {
+      if (!files) return;
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('image/')) {
+          const reader = new FileReader();
+          const f = files[i];
+          reader.onload = (ev) => {
+            mediaPool.push({
+              id: 'img_' + Math.random().toString(36).substring(2, 9),
+              filename: f.name,
+              dataUrl: ev.target.result
+            });
+            renderMode2XmlStudio();
+          };
+          reader.readAsDataURL(f);
         }
-      });
-    }
+      }
+    },
 
-    if (btnZip) btnZip.addEventListener('click', exportAsZip);
-    if (btnXml) btnXml.addEventListener('click', showXmlExportModal);
-    if (btnHost) btnHost.addEventListener('click', hostQuizNow);
-
-    if (importInput) {
-      importInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-          handleImportFile(e.target.files[0]);
-        }
-      });
-    }
-
-    if (btnCloseModal) {
-      btnCloseModal.addEventListener('click', () => {
-        document.getElementById('xmlExportModal').style.display = 'none';
-      });
-    }
-
-    if (btnCopyXml) btnCopyXml.addEventListener('click', copyXmlToClipboard);
-    if (btnDownloadXml) btnDownloadXml.addEventListener('click', downloadXmlFile);
-
-    // Mode 2 XML text editor live parser
-    const xmlTextarea = document.getElementById('xmlStudioTextarea');
-    let xmlDebounce = null;
-    if (xmlTextarea) {
-      xmlTextarea.addEventListener('input', () => {
-        clearTimeout(xmlDebounce);
-        xmlDebounce = setTimeout(() => {
-          const val = xmlTextarea.value.trim();
-          if (val.length > 15) {
-            parseAndLoadXml(val);
-          }
-        }, 400);
-      });
-    }
-
-    const btnXmlClear = document.getElementById('btnXmlModeClear');
-    if (btnXmlClear) {
-      btnXmlClear.addEventListener('click', () => {
-        if (xmlTextarea) xmlTextarea.value = '';
-        questions = [];
+    clearMediaPool: () => {
+      if (confirm('Clear all images from the Media Pool?')) {
+        mediaPool = [];
+        questions.forEach(q => q.image = null);
         renderMode2XmlStudio();
-      });
-    }
+      }
+    },
 
-    const btnXmlTemplate = document.getElementById('btnXmlModeInsertTemplate');
-    if (btnXmlTemplate) {
-      btnXmlTemplate.addEventListener('click', () => {
-        const template = `<?xml version="1.0" encoding="UTF-8"?>
+    deleteMedia: (mIndex) => {
+      if (mediaPool[mIndex]) {
+        const targetDataUrl = mediaPool[mIndex].dataUrl;
+        questions.forEach(q => {
+          if (q.image && q.image.dataUrl === targetDataUrl) q.image = null;
+        });
+        mediaPool.splice(mIndex, 1);
+        renderMode2XmlStudio();
+      }
+    },
+
+    assignMediaToQuestion: (mIndex, qIndex) => {
+      if (isNaN(mIndex) || mIndex < 0 || !mediaPool[mIndex]) return;
+      const media = mediaPool[mIndex];
+
+      questions.forEach(q => {
+        if (q.image && q.image.dataUrl === media.dataUrl) q.image = null;
+      });
+
+      if (qIndex >= 0 && questions[qIndex]) {
+        questions[qIndex].image = {
+          filename: media.filename,
+          dataUrl: media.dataUrl
+        };
+      }
+
+      renderMode2XmlStudio();
+    },
+
+    moveUp: (qIndex) => {
+      if (qIndex > 0) {
+        const temp = questions[qIndex - 1];
+        questions[qIndex - 1] = questions[qIndex];
+        questions[qIndex] = temp;
+        renderAllQuestionsVisual();
+      }
+    },
+
+    moveDown: (qIndex) => {
+      if (qIndex < questions.length - 1) {
+        const temp = questions[qIndex + 1];
+        questions[qIndex + 1] = questions[qIndex];
+        questions[qIndex] = temp;
+        renderAllQuestionsVisual();
+      }
+    },
+
+    duplicate: (qIndex) => {
+      const clone = JSON.parse(JSON.stringify(questions[qIndex]));
+      clone.id = 'q_' + Math.random().toString(36).substring(2, 9);
+      questions.splice(qIndex + 1, 0, clone);
+      renderAllQuestionsVisual();
+    },
+
+    deleteQuestion: (qIndex) => {
+      if (questions.length > 1 && confirm(`Delete Question #${qIndex + 1}?`)) {
+        questions.splice(qIndex, 1);
+        renderAllQuestionsVisual();
+      }
+    },
+
+    updateTimeLimit: (qIndex, val) => {
+      if (questions[qIndex]) {
+        questions[qIndex].timeLimit = parseInt(val, 10);
+      }
+    },
+
+    updateQuestionText: (qIndex, val) => {
+      if (questions[qIndex]) {
+        questions[qIndex].text = val;
+      }
+    },
+
+    updateOptionText: (qIndex, oIndex, val) => {
+      if (questions[qIndex] && questions[qIndex].options[oIndex]) {
+        questions[qIndex].options[oIndex].text = val;
+      }
+    },
+
+    toggleCorrect: (qIndex, oIndex) => {
+      const q = questions[qIndex];
+      if (!q) return;
+      if (q.type === 'TF') {
+        q.options.forEach((o, i) => { o.isCorrect = (i === oIndex); });
+      } else {
+        q.options[oIndex].isCorrect = !q.options[oIndex].isCorrect;
+        const anyCorrect = q.options.some(o => o.isCorrect);
+        if (!anyCorrect) q.options[oIndex].isCorrect = true;
+      }
+      renderAllQuestionsVisual();
+    },
+
+    removeImage: (qIndex) => {
+      if (questions[qIndex]) {
+        questions[qIndex].image = null;
+        if (currentMode === 'visual') renderAllQuestionsVisual();
+        else renderMode2XmlStudio();
+      }
+    },
+
+    handleQuestionFile: (file, qIndex) => {
+      if (questions[qIndex] && file) {
+        handleImageFileForQuestion(file, questions[qIndex]);
+      }
+    },
+
+    xmlClear: () => {
+      const xmlTextarea = document.getElementById('xmlStudioTextarea');
+      if (xmlTextarea) xmlTextarea.value = '';
+      questions = [];
+      renderMode2XmlStudio();
+    },
+
+    xmlInsertTemplate: () => {
+      const template = `<?xml version="1.0" encoding="UTF-8"?>
 <quiz title="Science & World Challenge">
   <question text="What is the chemical symbol for Gold?" timeLimit="20">
     <option>Ag</option>
@@ -996,38 +935,51 @@
     <option>10</option>
   </question>
 </quiz>`;
-        if (xmlTextarea) {
-          xmlTextarea.value = template;
-          parseAndLoadXml(template);
-        }
+      const xmlTextarea = document.getElementById('xmlStudioTextarea');
+      if (xmlTextarea) {
+        xmlTextarea.value = template;
+        parseAndLoadXml(template);
+      }
+    }
+  };
+
+  // ==================== EVENT LISTENERS SETUP ====================
+  function setupBuilderEvents() {
+    // Mode 2 XML text editor live parser
+    const xmlTextarea = document.getElementById('xmlStudioTextarea');
+    let xmlDebounce = null;
+    if (xmlTextarea) {
+      xmlTextarea.addEventListener('input', () => {
+        clearTimeout(xmlDebounce);
+        xmlDebounce = setTimeout(() => {
+          const val = xmlTextarea.value.trim();
+          if (val.length > 15) {
+            parseAndLoadXml(val);
+          }
+        }, 400);
       });
     }
 
     // Global Paste Listener for window (press Ctrl+V anywhere!)
     window.addEventListener('paste', (e) => {
-      // Don't intercept if user is typing text in an input or textarea
       const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
       if (tag === 'input' || tag === 'textarea') {
-        const items = (e.clipboardData || window.clipboardData).items;
+        const items = (e.clipboardData || window.clipboardData)?.items;
         let hasImg = false;
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf('image') !== -1) hasImg = true;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type && items[i].type.indexOf('image') !== -1) hasImg = true;
+          }
         }
-        if (!hasImg) return; // Allow normal text paste
+        if (!hasImg) return;
       }
 
       handlePasteEvent(e);
     });
 
-    // Global Paste Dropzone
+    // Global Paste Dropzone dragover
     const pasteZone = document.getElementById('globalPasteZone');
-    const mediaFileInput = document.getElementById('mediaPoolFileInput');
-    const btnClearMedia = document.getElementById('btnClearMediaPool');
-
     if (pasteZone) {
-      pasteZone.addEventListener('click', () => {
-        if (mediaFileInput) mediaFileInput.click();
-      });
       ['dragenter', 'dragover'].forEach(name => {
         pasteZone.addEventListener(name, (e) => {
           e.preventDefault();
@@ -1041,64 +993,26 @@
         });
       });
       pasteZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
+        const files = e.dataTransfer?.files;
         if (!files) return;
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].type.startsWith('image/')) {
-            const reader = new FileReader();
-            const f = files[i];
-            reader.onload = (ev) => {
-              mediaPool.push({
-                id: 'img_' + Math.random().toString(36).substr(2, 9),
-                filename: f.name,
-                dataUrl: ev.target.result
-              });
-              renderMode2XmlStudio();
-            };
-            reader.readAsDataURL(f);
-          }
-        }
-      });
-    }
-
-    if (mediaFileInput) {
-      mediaFileInput.addEventListener('change', (e) => {
-        const files = e.target.files;
-        if (!files) return;
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].type.startsWith('image/')) {
-            const reader = new FileReader();
-            const f = files[i];
-            reader.onload = (ev) => {
-              mediaPool.push({
-                id: 'img_' + Math.random().toString(36).substr(2, 9),
-                filename: f.name,
-                dataUrl: ev.target.result
-              });
-              renderMode2XmlStudio();
-            };
-            reader.readAsDataURL(f);
-          }
-        }
-      });
-    }
-
-    if (btnClearMedia) {
-      btnClearMedia.addEventListener('click', () => {
-        if (confirm('Clear all images from the Media Pool?')) {
-          mediaPool = [];
-          questions.forEach(q => q.image = null);
-          renderMode2XmlStudio();
-        }
+        window.TakootBuilder.handleMediaPoolFiles(files);
       });
     }
   }
 
-  // ==================== INITIALIZATION ====================
-  document.addEventListener('DOMContentLoaded', () => {
-    questions = createDefaultQuestions();
+  // ==================== BULLETPROOF INITIALIZATION ====================
+  function init() {
+    if (questions.length === 0) {
+      questions = createDefaultQuestions();
+    }
     renderAllQuestionsVisual();
     setupBuilderEvents();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
