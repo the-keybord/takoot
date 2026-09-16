@@ -436,21 +436,40 @@ function handleClientMessage(ws, data) {
     }
 
     case 'START_GAME': {
-      const room = rooms.get(ws.roomPin);
-      if (!room || room.hostWs !== ws) return;
+      const pin = (payload && payload.pin) ? String(payload.pin).trim() : ws.roomPin;
+      const room = rooms.get(pin);
+      if (!room) {
+        console.warn(`[START_GAME] Room not found: ${pin}`);
+        return ws.send(JSON.stringify({ type: 'ERROR', message: 'Game room not found or session expired. Please refresh and create room.' }));
+      }
+
+      // Re-bind host WebSocket connection in case of socket recovery
+      room.hostWs = ws;
+      ws.roomPin = room.pin;
+      ws.role = 'HOST';
+
+      if (room.state !== 'LOBBY') {
+        console.log(`[START_GAME] Room ${room.pin} is already started (state=${room.state}).`);
+        return;
+      }
 
       if (room.players.size === 0) {
         return ws.send(JSON.stringify({ type: 'ERROR', message: 'Cannot start game without players!' }));
       }
 
+      console.log(`[START_GAME] Successfully starting quiz "${room.quiz.title}" in room ${room.pin} with ${room.players.size} player(s).`);
       room.currentQuestionIndex = 0;
       startQuestion(room);
       break;
     }
 
     case 'NEXT_QUESTION': {
-      const room = rooms.get(ws.roomPin);
-      if (!room || room.hostWs !== ws) return;
+      const pin = (payload && payload.pin) ? String(payload.pin).trim() : ws.roomPin;
+      const room = rooms.get(pin);
+      if (!room) return;
+      room.hostWs = ws;
+      ws.roomPin = room.pin;
+      ws.role = 'HOST';
 
       room.currentQuestionIndex++;
       if (room.currentQuestionIndex >= room.quiz.questions.length) {
@@ -530,16 +549,25 @@ function handleClientMessage(ws, data) {
       break;
     }
 
+    case 'SKIP_QUESTION':
     case 'REVEAL_RESULTS': {
-      const room = rooms.get(ws.roomPin);
-      if (!room || room.hostWs !== ws) return;
+      const pin = (payload && payload.pin) ? String(payload.pin).trim() : ws.roomPin;
+      const room = rooms.get(pin);
+      if (!room) return;
+      room.hostWs = ws;
+      ws.roomPin = room.pin;
+      ws.role = 'HOST';
       finishQuestion(room);
       break;
     }
 
     case 'SHOW_LEADERBOARD': {
-      const room = rooms.get(ws.roomPin);
-      if (!room || room.hostWs !== ws) return;
+      const pin = (payload && payload.pin) ? String(payload.pin).trim() : ws.roomPin;
+      const room = rooms.get(pin);
+      if (!room) return;
+      room.hostWs = ws;
+      ws.roomPin = room.pin;
+      ws.role = 'HOST';
       sendLeaderboard(room);
       break;
     }
@@ -569,6 +597,7 @@ function startQuestion(room) {
       questionIndex: room.currentQuestionIndex,
       totalQuestions: room.quiz.questions.length,
       text: currentQ.text,
+      questionText: currentQ.text,
       image: currentQ.image,
       timeLimit: currentQ.timeLimit,
       options: currentQ.options,
@@ -585,6 +614,7 @@ function startQuestion(room) {
         questionIndex: room.currentQuestionIndex,
         totalQuestions: room.quiz.questions.length,
         text: currentQ.text,
+        questionText: currentQ.text,
         image: currentQ.image,
         timeLimit: currentQ.timeLimit,
         options: playerOptions
@@ -657,10 +687,12 @@ function finishQuestion(room) {
       questionIndex: room.currentQuestionIndex,
       totalQuestions: room.quiz.questions.length,
       text: currentQ.text,
+      questionText: currentQ.text,
       image: currentQ.image,
       options: currentQ.options,
       correctOptionIndex: correctOptionIndex,
       optionCounts: optionCounts,
+      totalVotes: room.answersReceived,
       answersReceived: room.answersReceived,
       totalPlayers: room.players.size,
       topPlayers: top5,

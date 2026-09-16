@@ -192,12 +192,14 @@
         break;
 
       case 'QUESTION_START':
+      case 'QUESTION_START_PLAYER':
         playBeep();
         renderPlayerQuestion(payload);
         showView(views.question);
         break;
 
       case 'QUESTION_RESULTS':
+      case 'QUESTION_RESULTS_PLAYER':
         renderPlayerResult(payload);
         showView(views.result);
         break;
@@ -218,6 +220,7 @@
         window.location.href = '/';
         break;
 
+      case 'JOIN_ERROR':
       case 'ERROR':
         showError(message || 'An error occurred.');
         break;
@@ -480,8 +483,14 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function initPlayer() {
     setupJoinFlow();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlayer);
+  } else {
+    initPlayer();
+  }
 
 })();

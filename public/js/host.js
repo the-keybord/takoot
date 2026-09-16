@@ -251,6 +251,7 @@
         break;
 
       case 'QUESTION_START':
+      case 'QUESTION_START_HOST':
         playGongSound();
         renderHostQuestion(payload);
         showView(views.hostQuestion);
@@ -262,10 +263,12 @@
         break;
 
       case 'ANSWER_SUBMITTED_HOST':
+      case 'ANSWER_RECEIVED_UPDATE':
         updateAnswerCount(payload.answersReceived, payload.totalPlayers);
         break;
 
       case 'QUESTION_RESULTS':
+      case 'QUESTION_RESULTS_HOST':
         stopAllMusic();
         renderHostResults(payload);
         showView(views.hostResults);
@@ -290,9 +293,15 @@
         window.location.reload();
         break;
 
-      case 'ERROR':
+      case 'ERROR': {
+        const startBtn = document.getElementById('btnStartGame');
+        if (startBtn) {
+          startBtn.disabled = false;
+          startBtn.textContent = 'Start Game 🚀';
+        }
         alert(message || 'An error occurred.');
         break;
+      }
     }
   }
 
@@ -358,7 +367,7 @@
     const optionsGrid = document.getElementById('hostOptionsGrid');
 
     if (qCounter) qCounter.textContent = `Question ${(payload.questionIndex || 0) + 1} / ${payload.totalQuestions || 1}`;
-    if (qText) qText.textContent = payload.questionText;
+    if (qText) qText.textContent = payload.questionText || payload.text || '';
     if (timerDisplay) {
       timerDisplay.textContent = payload.timeLimit;
       timerDisplay.classList.remove('warning');
@@ -421,7 +430,7 @@
     const resultsImg = document.getElementById('hostResultsQImage');
     const chartGrid = document.getElementById('chartBarsGrid');
 
-    if (fullText) fullText.textContent = payload.questionText || '';
+    if (fullText) fullText.textContent = payload.questionText || payload.text || '';
     if (resultsQCounter) resultsQCounter.textContent = `Question ${(payload.questionIndex || 0) + 1} / ${payload.totalQuestions || 1}`;
 
     if (payload.image && resultsImgBox && resultsImg) {
@@ -436,14 +445,14 @@
     chartGrid.innerHTML = '';
 
     const shapes = ['▲', '◆', '●', '■'];
-    const totalVotes = payload.totalVotes || 1;
+    const totalVotes = payload.totalVotes || payload.answersReceived || 1;
     const isTF = payload.options && payload.options.length === 2 &&
       (String(payload.options[0].text).trim().toLowerCase() === 'true' ||
        String(payload.options[0].text).trim().toLowerCase() === 'false');
 
     payload.options.forEach((opt, idx) => {
-      const votes = opt.votes || 0;
-      const pct = Math.max(5, Math.round((votes / totalVotes) * 100));
+      const votes = (payload.optionCounts && payload.optionCounts[idx] !== undefined) ? payload.optionCounts[idx] : (opt.votes || 0);
+      const pct = Math.max(5, Math.round((votes / Math.max(1, totalVotes)) * 100));
       let colorClass = `opt-${idx}`;
       if (isTF) {
         colorClass = idx === 0 ? 'opt-1' : 'opt-0';
@@ -894,31 +903,35 @@
     // Start Game Button
     const btnStart = document.getElementById('btnStartGame');
     if (btnStart) {
-      btnStart.addEventListener('click', () => {
-        sendWS('START_GAME', {});
+      btnStart.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.TakootHost.startGame();
       });
     }
 
     // Skip Timer Button
     const btnSkip = document.getElementById('btnEndTimerEarly');
     if (btnSkip) {
-      btnSkip.addEventListener('click', () => {
-        sendWS('SKIP_QUESTION', {});
+      btnSkip.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.TakootHost.skipQuestion();
       });
     }
 
     // Next Question Buttons
     const btnNext = document.getElementById('btnNextQuestion');
     if (btnNext) {
-      btnNext.addEventListener('click', () => {
-        sendWS('NEXT_QUESTION', {});
+      btnNext.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.TakootHost.nextQuestion();
       });
     }
 
     const btnNext2 = document.getElementById('btnNextQuestion2');
     if (btnNext2) {
-      btnNext2.addEventListener('click', () => {
-        sendWS('NEXT_QUESTION', {});
+      btnNext2.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.TakootHost.nextQuestion();
       });
     }
 
@@ -1033,8 +1046,25 @@
     });
   }
 
+  // Expose global Host API for guaranteed button click responsiveness
+  window.TakootHost = {
+    startGame: () => {
+      console.log('⚡ TakootHost.startGame() triggered, roomPin:', roomPin);
+      const startBtn = document.getElementById('btnStartGame');
+      if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.textContent = 'Starting Game... 🚀';
+      }
+      sendWS('START_GAME', { pin: roomPin });
+    },
+    skipQuestion: () => sendWS('SKIP_QUESTION', { pin: roomPin }),
+    nextQuestion: () => sendWS('NEXT_QUESTION', { pin: roomPin }),
+    playAgain: () => window.location.reload(),
+    toggleSound: () => toggleSoundMute()
+  };
+
   // ==================== INITIALIZATION ====================
-  document.addEventListener('DOMContentLoaded', () => {
+  function initHost() {
     setupStudioEvents();
     setupPreviewModal();
 
@@ -1056,6 +1086,13 @@
         console.error('Error loading pending quiz from builder:', e);
       }
     }
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHost);
+  } else {
+    initHost();
+  }
 
 })();
+
